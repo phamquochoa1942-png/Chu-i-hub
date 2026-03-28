@@ -7,74 +7,76 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl 
 })
 
--- [[ TẠO NÚT TRÒN BAY LƠ LỬNG (FLOATING BUTTON) ]]
-local FloatingButton = Instance.new("TextButton")
-FloatingButton.Name = "FloatingButton"
-FloatingButton.Parent = game:GetService("CoreGui"):FindFirstChild("RobloxGui") or game:GetService("CoreGui"):FindFirstChild("GuiService")
-FloatingButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0) -- Màu Đỏ (Bố có thể đổi màu ở đây)
-FloatingButton.Position = UDim2.new(0, 50, 0, 50) -- Vị trí ban đầu
-FloatingButton.Size = UDim2.new(0, 50, 0, 50) -- Kích thước (50x50)
-FloatingButton.Font = Enum.Font.SourceSansBold
-FloatingButton.Text = "🍎" -- Hình hiện trên nút (Chủ tịch có thể thay bằng 🍏)
-FloatingButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-FloatingButton.TextSize = 30
-FloatingButton.ZIndex = 1000
+-- [[ FIX NÚT TRÒN BẬT/TẮT MENU CHUẨN ]]
+local ScreenGui = Instance.new("ScreenGui")
+local ToggleButton = Instance.new("TextButton")
 
--- Làm cho nút tròn có thể kéo lê
-local Dragging = false
-local DragInput, DragStart, StartPosition
-FloatingButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        Dragging = true
-        DragStart = input.Position
-        StartPosition = FloatingButton.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then Dragging = false end
-        end)
-    end
-end)
-FloatingButton.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then DragInput = input end
-end)
-game:GetService("UserInputService").InputChanged:Connect(function(input)
-    if input == DragInput and Dragging then
-        local Delta = input.Position - DragStart
-        FloatingButton.Position = UDim2.new(StartPosition.X.Scale, StartPosition.X.Offset + Delta.X, StartPosition.Y.Scale, StartPosition.Y.Offset + Delta.Y)
-    end
+ScreenGui.Parent = game:GetService("CoreGui")
+ScreenGui.Name = "AppleHubToggle"
+
+ToggleButton.Parent = ScreenGui
+ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+ToggleButton.Position = UDim2.new(0, 50, 0, 100)
+ToggleButton.Size = UDim2.new(0, 60, 0, 60)
+ToggleButton.Text = "🍎"
+ToggleButton.TextSize = 40
+ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleButton.Draggable = true -- Cho phép kéo lê trên điện thoại
+
+-- Logic bật/tắt menu khi bấm vào nút tròn
+ToggleButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
 end)
 
--- Chức năng ẩn/hiện menu khi bấm vào nút tròn
-FloatingButton.MouseButton1Click:Connect(function()
-    Fluent:ToggleWindow() -- Hàm này sẽ tự động ẩn/hiện menu
-end)
-
--- [[ TẠO CÁC TAB (GIỐNG HỆT BẢN TRƯỚC) ]]
+-- [[ DANH SÁCH TAB ĐẦY ĐỦ ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "🏠 Tự Động", Icon = "home" }),
-    Sea = Window:AddTab({ Title = "🌊 Sự Kiện Biển", Icon = "waves" }),
-    Raid = Window:AddTab({ Title = "⚡ Auto Raid", Icon = "zap" }),
-    Stats = Window:AddTab({ Title = "📊 Chỉ Số", Icon = "bar-chart" }),
+    Combat = Window:AddTab({ Title = "⚔️ Chiến Đấu", Icon = "swords" }),
+    Sea = Window:AddTab({ Title = "🌊 Biển & Đảo", Icon = "waves" }),
+    Shop = Window:AddTab({ Title = "🛒 Cửa Hàng", Icon = "shopping-cart" }),
+    Teleport = Window:AddTab({ Title = "📍 Dịch Chuyển", Icon = "map-pin" }),
     Misc = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
 }
 
--- TAB CHÍNH
-Tabs.Main:AddSection("Auto Farm Level")
-Tabs.Main:AddToggle("FarmLvl", {Title = "Bật Auto Farm", Default = false})
-Tabs.Main:AddDropdown("Weapon", {
-    Title = "Chọn Vũ Khí",
-    Values = {"Melee", "Sword", "Fruit"},
-    Default = "Melee",
-    Callback = function(v) _G.Weapon = v end
-})
+-- TAB TỰ ĐỘNG
+Tabs.Main:AddSection("Auto Farm")
+Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (X10 Speed)", Default = false})
+Tabs.Main:AddToggle("AutoBone", {Title = "Auto Farm Xương", Default = false})
+Tabs.Main:AddToggle("AutoChest", {Title = "Auto Nhặt Rương", Default = false})
+Tabs.Main:AddDropdown("Weapon", {Title = "Chọn Vũ Khí", Values = {"Melee", "Sword", "Fruit"}, Default = "Melee"})
 
--- TAB BIỂN
+-- TAB CHIẾN ĐẤU
+Tabs.Combat:AddSection("Boss & PvP")
+Tabs.Combat:AddToggle("AutoKatakuri", {Title = "Auto Boss Katakuri", Default = false})
+Tabs.Combat:AddToggle("AutoIndra", {Title = "Auto Rip Indra", Default = false})
+Tabs.Combat:AddToggle("AutoSaber", {Title = "Auto Lấy Kiếm Saber", Default = false})
+
+-- TAB BIỂN (SEA EVENTS)
 Tabs.Sea:AddSection("Săn Quái Biển")
 Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Sea Beast", Default = false})
-Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Terror Shark", Default = false})
+Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Terror Shark (V4)", Default = false})
+Tabs.Sea:AddToggle("AutoShip", {Title = "Auto Bắn Tàu Chiến", Default = false})
+Tabs.Sea:AddSection("Auto Raid")
+Tabs.Sea:AddToggle("AutoRaid", {Title = "Auto Start & Finish Raid", Default = false})
+
+-- TAB SHOP (MUA ĐỒ NHANH)
+Tabs.Shop:AddSection("Mua Vật Phẩm")
+Tabs.Shop:AddButton({Title = "Mua Melee Superhuman", Callback = function() end})
+Tabs.Shop:AddButton({Title = "Mua Melee Death Step", Callback = function() end})
+Tabs.Shop:AddButton({Title = "Mua Chip Raid (Flame)", Callback = function() end})
+
+-- TAB TELEPORT
+Tabs.Teleport:AddSection("Di Chuyển Nhanh")
+Tabs.Teleport:AddButton({Title = "Về Đảo Rùa (Turtle Island)", Callback = function() end})
+Tabs.Teleport:AddButton({Title = "Về Đảo Phụ Nữ (Hydra)", Callback = function() end})
 
 -- TAB HỆ THỐNG
-Tabs.Misc:AddSection("Treo Máy")
-Tabs.Misc:AddToggle("WhiteScreen", {Title = "Màn Hình Trắng", Default = false}):OnChanged(function() game:GetService("RunService"):Set3dRenderingEnabled(not Fluent.Options.WhiteScreen.Value) end)
+Tabs.Misc:AddSection("Tối Ưu")
+Tabs.Misc:AddToggle("WhiteScreen", {Title = "White Screen (Treo Máy)", Default = false}):OnChanged(function()
+    game:GetService("RunService"):Set3dRenderingEnabled(not Fluent.Options.WhiteScreen.Value)
+end)
+Tabs.Misc:AddButton({Title = "Nhập Code Exp x2", Callback = function() end})
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub", Content = "Đã nạp đầy đủ chức năng và Nút Tròn!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub", Content = "Đã Fix Nút Tròn & Cập Nhật Full Chức Năng!", Duration = 5})
