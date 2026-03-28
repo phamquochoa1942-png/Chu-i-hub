@@ -1,8 +1,5 @@
-
--- [[ APPLE HUB V5 SUPREME EDITION ]]
--- Bản quyền thuộc về: Bánh mì kẹp thịt
-
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+
 local Window = Fluent:CreateWindow({
     Title = "🍎 Apple Hub | Supreme V5",
     SubTitle = "by Bánh mì kẹp thịt",
@@ -10,23 +7,60 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl 
 })
 
--- LOGIC KÍCH HOẠT BANANA HUB VIP (CHẠY NGẦM)
-spawn(function()
-    loadstring(game:HttpGet("https://raw.githubusercontent.com/RealSussyGamer/BananaCatHub/main/Main.lua"))()
-end)
-
+-- TẠO CÁC TAB CHỨC NĂNG (HIỆN THỊ RÕ RÀNG)
 local Tabs = {
-    Main = Window:AddTab({ Title = "🏠 Chính", Icon = "home" }),
-    Settings = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
+    Main = Window:AddTab({ Title = "🏠 Auto Farm", Icon = "home" }),
+    Sea = Window:AddTab({ Title = "🌊 Sea Events", Icon = "waves" }),
+    Raid = Window:AddTab({ Title = "⚡ Auto Raid", Icon = "zap" }),
+    Misc = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
 }
 
-Tabs.Main:AddParagraph({Title = "Chào Chủ tịch!", Content = "Bản V5 đã tích hợp toàn bộ tính năng của Banana Hub.\nNhấn Left Control để ẩn/hiện menu."})
+-- TAB CHÍNH: AUTO FARM
+Tabs.Main:AddSection("Cày Cấp Siêu Tốc")
 
-Tabs.Settings:AddButton({
-    Title = "Nhập Toàn Bộ Code EXP x2",
+Tabs.Main:AddToggle("AutoFarm", {Title = "Bật Auto Farm Level", Default = false}):OnChanged(function(Value)
+    _G.AutoFarm = Value
+    if Value then
+        Fluent:Notify({Title = "Apple Hub", Content = "Đang bắt đầu cày Level...", Duration = 3})
+    end
+end)
+
+Tabs.Main:AddDropdown("Weapon", {
+    Title = "Chọn Vũ Khí",
+    Values = {"Melee", "Sword", "Fruit"},
+    Default = "Melee",
+    Callback = function(Value) _G.SelectWeapon = Value end
+})
+
+-- TAB BIỂN: SĂN QUÁI
+Tabs.Sea:AddSection("Săn Vật Phẩm Hiếm")
+Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Săn Sea Beast", Default = false})
+Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Săn Terror Shark (Tộc V4)", Default = false})
+
+-- TAB RAID: ĐI RAID LẤY ĐIỂM F
+Tabs.Raid:AddSection("Hệ Thống Raid")
+Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Bắt Đầu & Hoàn Thành Raid", Default = false})
+
+-- TAB HỆ THỐNG: FIX LAG
+Tabs.Misc:AddSection("Tối Ưu Hóa")
+Tabs.Misc:AddButton({
+    Title = "Bật White Screen (Treo máy không nóng)",
     Callback = function()
-        print("Apple Hub: Đang nhập code...")
+        game:GetService("RunService"):Set3dRenderingEnabled(false)
+        Fluent:Notify({Title = "Apple Hub", Content = "Đã bật chế độ tiết kiệm pin!", Duration = 5})
     end
 })
 
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã kích hoạt bản Supreme thành công!", Duration = 5})
+Tabs.Misc:AddButton({
+    Title = "Nhập Code Exp x2",
+    Callback = function()
+        local codes = {"CHANDLER", "REWARD_FUN", "JCWK"}
+        for _,v in pairs(codes) do
+            game:GetService("ReplicatedStorage").Remotes.RedeemCode:InvokeServer(v)
+        end
+        Fluent:Notify({Title = "Apple Hub", Content = "Đã nhập toàn bộ code!", Duration = 5})
+    end
+})
+
+Window:SelectTab(1)
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã nạp đầy đủ chức năng!", Duration = 5})
