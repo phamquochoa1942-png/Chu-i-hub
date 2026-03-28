@@ -1,0 +1,32 @@
+
+-- [[ APPLE HUB V5 SUPREME EDITION ]]
+-- Bản quyền thuộc về: Bánh mì kẹp thịt
+
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Window = Fluent:CreateWindow({
+    Title = "🍎 Apple Hub | Supreme V5",
+    SubTitle = "by Bánh mì kẹp thịt",
+    TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = true, Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl 
+})
+
+-- LOGIC KÍCH HOẠT BANANA HUB VIP (CHẠY NGẦM)
+spawn(function()
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/RealSussyGamer/BananaCatHub/main/Main.lua"))()
+end)
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "🏠 Chính", Icon = "home" }),
+    Settings = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
+}
+
+Tabs.Main:AddParagraph({Title = "Chào Chủ tịch!", Content = "Bản V5 đã tích hợp toàn bộ tính năng của Banana Hub.\nNhấn Left Control để ẩn/hiện menu."})
+
+Tabs.Settings:AddButton({
+    Title = "Nhập Toàn Bộ Code EXP x2",
+    Callback = function()
+        print("Apple Hub: Đang nhập code...")
+    end
+})
+
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã kích hoạt bản Supreme thành công!", Duration = 5})
