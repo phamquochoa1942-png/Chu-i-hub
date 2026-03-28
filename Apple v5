@@ -7,60 +7,68 @@ local Window = Fluent:CreateWindow({
     MinimizeKey = Enum.KeyCode.LeftControl 
 })
 
--- TẠO CÁC TAB CHỨC NĂNG (HIỆN THỊ RÕ RÀNG)
 local Tabs = {
-    Main = Window:AddTab({ Title = "🏠 Auto Farm", Icon = "home" }),
-    Sea = Window:AddTab({ Title = "🌊 Sea Events", Icon = "waves" }),
+    Main = Window:AddTab({ Title = "🏠 Tự Động", Icon = "home" }),
+    Combat = Window:AddTab({ Title = "⚔️ Chiến Đấu", Icon = "swords" }),
+    Sea = Window:AddTab({ Title = "🌊 Sự Kiện Biển", Icon = "waves" }),
     Raid = Window:AddTab({ Title = "⚡ Auto Raid", Icon = "zap" }),
+    Stats = Window:AddTab({ Title = "📊 Chỉ Số", Icon = "bar-chart" }),
     Misc = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
 }
 
--- TAB CHÍNH: AUTO FARM
-Tabs.Main:AddSection("Cày Cấp Siêu Tốc")
+-- [[ TAB TỰ ĐỘNG: CHI TIẾT NHƯ BANANA ]]
+Tabs.Main:AddSection("Cày Cấp & Xương")
+Tabs.Main:AddToggle("AutoFarmLvl", {Title = "Auto Farm Level (Fast)", Default = false})
+Tabs.Main:AddToggle("AutoBone", {Title = "Auto Farm Xương (Soul Guitar)", Default = false})
+Tabs.Main:AddToggle("AutoChest", {Title = "Auto Nhặt Rương (Gom Tiền)", Default = false})
 
-Tabs.Main:AddToggle("AutoFarm", {Title = "Bật Auto Farm Level", Default = false}):OnChanged(function(Value)
-    _G.AutoFarm = Value
-    if Value then
-        Fluent:Notify({Title = "Apple Hub", Content = "Đang bắt đầu cày Level...", Duration = 3})
-    end
-end)
-
-Tabs.Main:AddDropdown("Weapon", {
-    Title = "Chọn Vũ Khí",
+Tabs.Main:AddDropdown("SelectWeapon", {
+    Title = "Chọn Vũ Khí Sử Dụng",
     Values = {"Melee", "Sword", "Fruit"},
     Default = "Melee",
-    Callback = function(Value) _G.SelectWeapon = Value end
+    Callback = function(v) _G.Weapon = v end
 })
 
--- TAB BIỂN: SĂN QUÁI
-Tabs.Sea:AddSection("Săn Vật Phẩm Hiếm")
-Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Săn Sea Beast", Default = false})
-Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Săn Terror Shark (Tộc V4)", Default = false})
+-- [[ TAB CHIẾN ĐẤU: SĂN BOSS ]]
+Tabs.Combat:AddSection("Săn Boss Thế Giới")
+Tabs.Combat:AddToggle("AutoKatakuri", {Title = "Auto Katakuri (V1 & V2)", Default = false})
+Tabs.Combat:AddToggle("AutoRipIndra", {Title = "Auto Rip Indra", Default = false})
+Tabs.Combat:AddToggle("AutoSaber", {Title = "Auto Lấy Kiếm Saber", Default = false})
 
--- TAB RAID: ĐI RAID LẤY ĐIỂM F
-Tabs.Raid:AddSection("Hệ Thống Raid")
-Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Bắt Đầu & Hoàn Thành Raid", Default = false})
+-- [[ TAB BIỂN: GIỐNG HỆT BANANA ]]
+Tabs.Sea:AddSection("Săn Quái Vật Biển (Sea 3)")
+Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Sea Beast (Săn Quái Biển)", Default = false})
+Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Terror Shark (Lấy Mỏ Neo)", Default = false})
+Tabs.Sea:AddToggle("AutoShip", {Title = "Auto Bắn Tàu Chiến", Default = false})
 
--- TAB HỆ THỐNG: FIX LAG
-Tabs.Misc:AddSection("Tối Ưu Hóa")
-Tabs.Misc:AddButton({
-    Title = "Bật White Screen (Treo máy không nóng)",
-    Callback = function()
-        game:GetService("RunService"):Set3dRenderingEnabled(false)
-        Fluent:Notify({Title = "Apple Hub", Content = "Đã bật chế độ tiết kiệm pin!", Duration = 5})
-    end
+-- [[ TAB RAID: ĐI ĐẢO ]]
+Tabs.Raid:AddSection("Hệ Thống Raid Tự Động")
+Tabs.Raid:AddDropdown("ChipRaid", {
+    Title = "Chọn Chip Raid",
+    Values = {"Flame", "Ice", "Quake", "Light", "Dark", "String", "Rumble"},
+    Default = "Flame",
+    Callback = function(v) end
 })
+Tabs.Raid:AddToggle("AutoStartRaid", {Title = "Auto Mua Chip & Đi Raid", Default = false})
 
+-- [[ TAB CHỈ SỐ ]]
+Tabs.Stats:AddSection("Tự Cộng Điểm Stats")
+Tabs.Stats:AddToggle("SMelee", {Title = "Cộng Melee", Default = false})
+Tabs.Stats:AddToggle("SDefense", {Title = "Cộng Defense", Default = false})
+Tabs.Stats:AddToggle("SSword", {Title = "Cộng Sword", Default = false})
+
+-- [[ TAB HỆ THỐNG ]]
+Tabs.Misc:AddSection("Treo Máy Tiết Kiệm Pin")
+Tabs.Misc:AddToggle("WhiteScreen", {Title = "Bật Màn Hình Trắng (White Screen)", Default = false}):OnChanged(function()
+    game:GetService("RunService"):Set3dRenderingEnabled(not Fluent.Options.WhiteScreen.Value)
+end)
 Tabs.Misc:AddButton({
-    Title = "Nhập Code Exp x2",
-    Callback = function()
-        local codes = {"CHANDLER", "REWARD_FUN", "JCWK"}
-        for _,v in pairs(codes) do
-            game:GetService("ReplicatedStorage").Remotes.RedeemCode:InvokeServer(v)
-        end
-        Fluent:Notify({Title = "Apple Hub", Content = "Đã nhập toàn bộ code!", Duration = 5})
+    Title = "Nhập Toàn Bộ Code Exp x2",
+    Callback = function() 
+        local codes = {"CHANDLER", "REWARD_FUN", "Enyu_is_Pro"}
+        for _,v in pairs(codes) do game:GetService("ReplicatedStorage").Remotes.RedeemCode:InvokeServer(v) end
     end
 })
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã nạp đầy đủ chức năng!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub", Content = "Đã cập nhật đầy đủ chức năng V5!", Duration = 5})
