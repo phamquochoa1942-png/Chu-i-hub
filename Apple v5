@@ -28,24 +28,17 @@ local Tabs = {
     Misc = Window:AddTab({ Title = "⚙️ Khác", Icon = "settings" })
 }
 
--- --- TAB FARM TỔNG (FIX TRIỆT ĐỂ GIẬT NÚT) ---
+-- --- TAB FARM TỔNG (FIX CHỐNG GIẬT NÚT) ---
 Tabs.Main:AddSection("Cày Cấp & Tiền")
 
 local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = _G.AutoFarm})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
-    -- Ngắt ngay lập tức khi tắt
-    if not FarmToggle.Value then 
-        _G.AutoFarm = false 
-    end
 end)
 
 local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = _G.AutoChest})
 ChestToggle:OnChanged(function()
     _G.AutoChest = ChestToggle.Value
-    if not ChestToggle.Value then 
-        _G.AutoChest = false 
-    end
 end)
 
 local BringMobToggle = Tabs.Main:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = _G.BringMob})
@@ -121,13 +114,13 @@ Tabs.Misc:AddButton({Title = "Nhập All Code EXP", Callback = function()
     for _, code in pairs(codes) do game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RedeemCode", code) end
 end})
 
--- [[ LOGIC VẬN HÀNH TỐI ƯU - FIXED LOGIC CHỐNG GIẬT ]]
+-- [[ LOGIC VẬN HÀNH - FIX TRIỆT ĐỂ GIẬT NÚT ]]
 task.spawn(function()
     while true do 
-        task.wait() -- Luôn có wait để tránh treo game và lag UI
+        task.wait(0.01) -- Giảm thiểu delay nhưng vẫn giữ UI mượt
         if _G.AutoFarm == true then
             pcall(function()
-                -- Kiểm tra lại ngay lập tức trạng thái nút, nếu tắt thì thoát pcall luôn
+                -- Lớp kiểm tra ngắt 1: Trước khi thực hiện hành động
                 if _G.AutoFarm == false then return end
                 
                 game:GetService("VirtualUser"):CaptureController()
@@ -135,7 +128,7 @@ task.spawn(function()
                 
                 if _G.BringMob and _G.AutoFarm == true then
                     for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        -- Kiểm tra biến liên tục trong loop để dừng ngay lập tức
+                        -- Lớp kiểm tra ngắt 2: Ngay trong vòng lặp gom quái
                         if _G.AutoFarm == false then break end
                         if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
                             v.HumanoidRootPart.CanCollide = false
@@ -155,10 +148,10 @@ task.spawn(function()
         if _G.AutoChest == true then
             pcall(function()
                 for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
-                    if not _G.AutoChest then break end 
+                    if _G.AutoChest == false then break end 
                     if v.Name:find("Chest") then
                         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                        task.wait(0.15) -- Thêm chút delay để UI kịp nhận diện nút bấm
+                        task.wait(0.1) 
                     end
                 end
             end)
@@ -185,4 +178,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã FIX lỗi giật nút Farm cho chủ tịch!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã FIX lỗi giật nút Farm cho chủ tịch Quoc Hoa!", Duration = 5})
