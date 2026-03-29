@@ -28,15 +28,33 @@ local Tabs = {
     Misc = Window:AddTab({ Title = "⚙️ Khác", Icon = "settings" })
 }
 
--- --- TAB FARM TỔNG ---
+-- --- TAB FARM TỔNG (FIX CHỐNG GIẬT NÚT) ---
 Tabs.Main:AddSection("Cày Cấp & Tiền")
-Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false}):OnChanged(function() _G.AutoFarm = Fluent.Options.AutoFarm.Value end)
-Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false}):OnChanged(function() _G.AutoChest = Fluent.Options.AutoChest.Value end)
-Tabs.Main:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = true}):OnChanged(function() _G.BringMob = Fluent.Options.BringMob.Value end)
+
+local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
+FarmToggle:OnChanged(function()
+    _G.AutoFarm = FarmToggle.Value
+    if not FarmToggle.Value then
+        -- Ép trạng thái về false tuyệt đối để dừng loop
+        _G.AutoFarm = false 
+    end
+end)
+
+local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
+ChestToggle:OnChanged(function()
+    _G.AutoChest = ChestToggle.Value
+end)
+
+Tabs.Main:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = true}):OnChanged(function()
+    _G.BringMob = Fluent.Options.BringMob.Value
+end)
 
 -- --- TAB CHIẾN ĐẤU ---
 Tabs.Combat:AddSection("Hỗ Trợ PvP")
-Tabs.Combat:AddToggle("FastAttack", {Title = "Fast Attack Pro", Default = true}):OnChanged(function() _G.FastAttack = Fluent.Options.FastAttack.Value end)
+Tabs.Combat:AddToggle("FastAttack", {Title = "Fast Attack Pro", Default = true}):OnChanged(function()
+    _G.FastAttack = Fluent.Options.FastAttack.Value
+end)
+
 Tabs.Combat:AddDropdown("WeaponSelect", {
     Title = "Vũ Khí Đang Dùng",
     Values = {"Melee", "Sword", "Blox Fruit"},
@@ -44,15 +62,18 @@ Tabs.Combat:AddDropdown("WeaponSelect", {
     Callback = function(Value) _G.SelectWeapon = Value end
 })
 
--- --- TAB RAIDS (MỚI NÂNG CẤP) ---
+-- --- TAB RAIDS ---
 Tabs.Raid:AddSection("Tự Động Đi Raid")
-Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = false}):OnChanged(function() _G.AutoRaid = Fluent.Options.AutoRaid.Value end)
+Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = false}):OnChanged(function()
+    _G.AutoRaid = Fluent.Options.AutoRaid.Value
+end)
+
 Tabs.Raid:AddButton({
     Title = "Mua Chip (Mystery Scientist)",
     Callback = function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RaidsEntity","BuyChip") end
 })
 
--- --- TAB VẬT PHẨM (MỚI NÂNG CẤP) ---
+-- --- TAB VẬT PHẨM ---
 Tabs.Items:AddSection("Săn Đồ Ngon")
 Tabs.Items:AddButton({
     Title = "Auto Nhặt Trái Ác Quỷ (Fruit)",
@@ -73,30 +94,59 @@ Tabs.Stats:AddDropdown("StatPoint", {
     Callback = function(Value) _G.StatPoint = Value end
 })
 
--- --- TAB MISC (LÀM LẠI FULL CHỨC NĂNG) ---
+-- --- TAB MISC ---
 Tabs.Misc:AddSection("Tiện Ích Người Chơi")
 Tabs.Misc:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false}):OnChanged(function() _G.InfiniteDash = Fluent.Options.InfDash.Value end)
-Tabs.Misc:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = V end})
+
+Tabs.Misc:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = V 
+    end
+end})
+
 Tabs.Misc:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 Tabs.Misc:AddButton({Title = "Nhập All Code EXP", Callback = function() 
-    local codes = {"REWARD_FUN", "NEWEST_CODE", "KITT_GAMING"} -- Thêm code mới vào đây
+    local codes = {"REWARD_FUN", "NEWEST_CODE", "KITT_GAMING"} 
     for _, code in pairs(codes) do game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RedeemCode", code) end
 end})
 
--- [[ LOGIC VẬN HÀNH ]]
+-- [[ LOGIC VẬN HÀNH TỐI ƯU - CHỐNG GIẬT NÚT ]]
 task.spawn(function()
-    while task.wait() do
-        pcall(function()
-            if _G.AutoFarm then
-                -- (Logic Farm, BringMob, FastAttack đã tối ưu ở đây)
+    while true do task.wait()
+        if _G.AutoFarm == true then
+            pcall(function()
+                -- Ngắt ngay lập tức nếu biến bị đổi sang false trong lúc đang loop
+                if not _G.AutoFarm then return end
+                
                 game:GetService("VirtualUser"):CaptureController()
                 game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                
+                -- Gom quái (Chỉ chạy khi Farm đang bật)
+                if _G.BringMob and _G.AutoFarm then
+                    local MyPos = game.Players.LocalPlayer.Character.HumanoidRootPart.Position
+                    for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
+                        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
+                            v.HumanoidRootPart.CanCollide = false
+                            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                        end
+                    end
+                end
+            end)
+        end
+        
+        if _G.InfiniteDash == true then
+            debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
+        end
+
+        if _G.AutoChest == true then
+            for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
+                if not _G.AutoChest then break end -- Dừng bay ngay nếu tắt
+                if v.Name:find("Chest") then
+                    game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                    task.wait(0.1)
+                end
             end
-            if _G.InfiniteDash then
-                game.Players.LocalPlayer.Character.Humanoid.JumpPower = 50 -- Reset Jump nếu cần
-                debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0) -- Bypass Dash Cooldown
-            end
-        end)
+        end
     end
 end)
 
@@ -113,8 +163,9 @@ local UICorner = Instance.new("UICorner", ToggleButton)
 UICorner.CornerRadius = UDim.new(1, 0)
 ToggleButton.MouseButton1Click:Connect(function()
     game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+    task.wait(0.01)
     game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã lấp đầy tất cả chức năng còn thiếu!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã fix lỗi giật nút Farm cho chủ tịch Quoc Hoa!", Duration = 5})
