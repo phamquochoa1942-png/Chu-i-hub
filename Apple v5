@@ -28,27 +28,28 @@ local Tabs = {
     Misc = Window:AddTab({ Title = "⚙️ Khác", Icon = "settings" })
 }
 
--- --- TAB FARM TỔNG (FIX CHỐNG GIẬT NÚT) ---
+-- --- TAB FARM TỔNG (FIX CHỐNG GIẬT) ---
 Tabs.Main:AddSection("Cày Cấp & Tiền")
-
-local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = _G.AutoFarm})
+local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
+    -- Ép trạng thái về đúng UI, không cho phép logic ngầm tự bật lại
+    _G.AutoFarm = FarmToggle.Value 
 end)
 
-local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = _G.AutoChest})
+local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
 ChestToggle:OnChanged(function()
     _G.AutoChest = ChestToggle.Value
 end)
 
-local BringMobToggle = Tabs.Main:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = _G.BringMob})
+-- --- TAB CHIẾN ĐẤU (CHỨA BRING MOB THEO Ý CHỦ TỊCH) ---
+Tabs.Combat:AddSection("Hỗ Trợ Chiến Đấu")
+local BringMobToggle = Tabs.Combat:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = true})
 BringMobToggle:OnChanged(function()
     _G.BringMob = BringMobToggle.Value
 end)
 
--- --- TAB CHIẾN ĐẤU ---
-Tabs.Combat:AddSection("Hỗ Trợ PvP")
-local FastAttackToggle = Tabs.Combat:AddToggle("FastAttack", {Title = "Fast Attack Pro", Default = _G.FastAttack})
+local FastAttackToggle = Tabs.Combat:AddToggle("FastAttack", {Title = "Fast Attack Pro", Default = true})
 FastAttackToggle:OnChanged(function()
     _G.FastAttack = FastAttackToggle.Value
 end)
@@ -62,7 +63,7 @@ Tabs.Combat:AddDropdown("WeaponSelect", {
 
 -- --- TAB RAIDS ---
 Tabs.Raid:AddSection("Tự Động Đi Raid")
-local RaidToggle = Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = _G.AutoRaid})
+local RaidToggle = Tabs.Raid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = false})
 RaidToggle:OnChanged(function()
     _G.AutoRaid = RaidToggle.Value
 end)
@@ -87,7 +88,7 @@ Tabs.Items:AddButton({
 
 -- --- TAB CHỈ SỐ ---
 Tabs.Stats:AddSection("Tự Động Cộng Điểm")
-local AutoStatsToggle = Tabs.Stats:AddToggle("AutoStats", {Title = "Kích Hoạt Auto Stats", Default = _G.AutoStats})
+local AutoStatsToggle = Tabs.Stats:AddToggle("AutoStats", {Title = "Kích Hoạt Auto Stats", Default = false})
 AutoStatsToggle:OnChanged(function() _G.AutoStats = AutoStatsToggle.Value end)
 
 Tabs.Stats:AddDropdown("StatPoint", {
@@ -97,10 +98,8 @@ Tabs.Stats:AddDropdown("StatPoint", {
 
 -- --- TAB MISC ---
 Tabs.Misc:AddSection("Tiện Ích Người Chơi")
-local DashToggle = Tabs.Misc:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = _G.InfiniteDash})
-DashToggle:OnChanged(function()
-    _G.InfiniteDash = DashToggle.Value
-end)
+local DashToggle = Tabs.Misc:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false})
+DashToggle:OnChanged(function() _G.InfiniteDash = DashToggle.Value end)
 
 Tabs.Misc:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
     if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
@@ -114,48 +113,43 @@ Tabs.Misc:AddButton({Title = "Nhập All Code EXP", Callback = function()
     for _, code in pairs(codes) do game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RedeemCode", code) end
 end})
 
--- [[ LOGIC VẬN HÀNH - FIX TRIỆT ĐỂ GIẬT NÚT ]]
+-- [[ LOGIC VẬN HÀNH - FIX TRIỆT ĐỂ LỖI GIẬT NÚT ]]
 task.spawn(function()
     while true do 
-        task.wait(0.01) -- Giảm thiểu delay nhưng vẫn giữ UI mượt
-        if _G.AutoFarm == true then
-            pcall(function()
-                -- Lớp kiểm tra ngắt 1: Trước khi thực hiện hành động
-                if _G.AutoFarm == false then return end
-                
+        task.wait() 
+        pcall(function()
+            -- Auto Farm: Chỉ chạy khi biến là True, tắt là ngắt ngay
+            if _G.AutoFarm then
                 game:GetService("VirtualUser"):CaptureController()
                 game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
                 
-                if _G.BringMob and _G.AutoFarm == true then
+                -- Gom quái: Check cả 2 điều kiện để tránh giật logic
+                if _G.BringMob and _G.AutoFarm then
                     for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        -- Lớp kiểm tra ngắt 2: Ngay trong vòng lặp gom quái
-                        if _G.AutoFarm == false then break end
+                        if not _G.AutoFarm then break end -- Ngắt vòng lặp gom ngay nếu tắt farm
                         if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
                             v.HumanoidRootPart.CanCollide = false
                             v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                            v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
                         end
                     end
                 end
-            end)
-        end
-        
-        if _G.InfiniteDash == true then
-            pcall(function()
-                debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
-            end)
-        end
-
-        if _G.AutoChest == true then
-            pcall(function()
+            end
+            
+            if _G.AutoChest then
                 for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
-                    if _G.AutoChest == false then break end 
+                    if not _G.AutoChest then break end 
                     if v.Name:find("Chest") then
                         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
                         task.wait(0.1) 
                     end
                 end
-            end)
-        end
+            end
+
+            if _G.InfiniteDash then
+                debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
+            end
+        end)
     end
 end)
 
@@ -178,4 +172,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã FIX lỗi giật nút Farm cho chủ tịch Quoc Hoa!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã fix lỗi giật nút & dời Bring Mob sang Tab Combat!", Duration = 5})
