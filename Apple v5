@@ -1,23 +1,22 @@
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
 local Window = Fluent:CreateWindow({
-    Title = "🍎 Apple Hub | Supreme V5",
-    SubTitle = "by Bánh mì kẹp thịt",
+    Title = "🍎 Apple Hub | Platinum V5",
+    SubTitle = "Bản Nâng Cấp Tối Thượng",
     TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = true, Theme = "Dark",
     MinimizeKey = Enum.KeyCode.LeftControl 
 })
 
--- [[ 1. KHAI BÁO TẤT CẢ CÁC TAB TRƯỚC ]]
+-- [[ TỔNG HỢP TAB ]]
 local Tabs = {
     Main = Window:AddTab({ Title = "🏠 Tự Động", Icon = "home" }),
     Items = Window:AddTab({ Title = "⚔️ Vũ Khí Hiếm", Icon = "sword" }),
+    Visual = Window:AddTab({ Title = "👁️ Hiển Thị (ESP)", Icon = "eye" }), -- TAB MỚI XỊN
     Sea = Window:AddTab({ Title = "🌊 Biển & Đảo", Icon = "waves" }),
     Teleport = Window:AddTab({ Title = "📍 Dịch Chuyển", Icon = "map-pin" }),
     Shop = Window:AddTab({ Title = "🛒 Cửa Hàng", Icon = "shopping-cart" }),
     Misc = Window:AddTab({ Title = "⚙️ Hệ Thống", Icon = "settings" })
 }
-
--- [[ 2. THÊM CHỨC NĂNG VÀO TỪNG TAB (PHẢI VIẾT SAU KHI CÓ TABS) ]]
 
 -- --- TAB TỰ ĐỘNG ---
 Tabs.Main:AddSection("Auto Farm Level")
@@ -27,35 +26,45 @@ Tabs.Main:AddDropdown("Weapon", {Title = "Chọn Vũ Khí", Values = {"Melee", "
 
 -- --- TAB VŨ KHÍ HIẾM ---
 Tabs.Items:AddSection("Săn Vật Phẩm Huyền Thoại")
-Tabs.Items:AddToggle("AutoCDK", {Title = "Auto Lấy Cursed Dual Katana", Default = false})
+Tabs.Items:AddToggle("AutoCDK", {Title = "Auto Lấy CDK", Default = false})
 Tabs.Items:AddToggle("AutoSoulGuitar", {Title = "Auto Lấy Soul Guitar", Default = false})
-Tabs.Items:AddToggle("AutoSaber", {Title = "Auto Lấy Kiếm Saber", Default = false})
-Tabs.Items:AddToggle("AutoYama", {Title = "Auto Lấy Kiếm Yama (Elite)", Default = false})
+
+-- --- TAB VISUAL (ESP) - CÁI NÀY CỰC XỊN ---
+Tabs.Visual:AddSection("Nhìn Xuyên Tường")
+Tabs.Visual:AddToggle("ESP_Player", {Title = "Hiện Vị Trí Người Chơi", Default = false})
+Tabs.Visual:AddToggle("ESP_Fruit", {Title = "Hiện Trái Ác Quỷ (Fruit)", Default = false})
+Tabs.Visual:AddToggle("ESP_Chest", {Title = "Hiện Rương (Chest)", Default = false})
+Tabs.Visual:AddToggle("ESP_Island", {Title = "Hiện Tên Đảo", Default = false})
 
 -- --- TAB BIỂN & ĐẢO ---
-Tabs.Sea:AddSection("Săn Quái Biển & Raid")
-Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Sea Beast (Săn Quái Biển)", Default = false})
+Tabs.Sea:AddSection("Săn Quái Biển")
+Tabs.Sea:AddToggle("AutoSB", {Title = "Auto Sea Beast", Default = false})
 Tabs.Sea:AddToggle("AutoTerror", {Title = "Auto Terror Shark", Default = false})
-Tabs.Sea:AddToggle("AutoStartRaid", {Title = "Auto Start & Finish Raid", Default = false})
 
 -- --- TAB DỊCH CHUYỂN ---
-Tabs.Teleport:AddSection("Dịch Chuyển Sea 3")
-Tabs.Teleport:AddButton({Title = "Về Mansion (Đảo Rùa)", Callback = function() print("Teleport to Mansion") end})
-Tabs.Teleport:AddButton({Title = "Về Castle on the Sea", Callback = function() print("Teleport to Castle") end})
-Tabs.Teleport:AddButton({Title = "Về Hydra Island", Callback = function() print("Teleport to Hydra") end})
+Tabs.Teleport:AddSection("Dịch Chuyển Nhanh")
+Tabs.Teleport:AddButton({Title = "Về Mansion", Callback = function() end})
+Tabs.Teleport:AddButton({Title = "Về Castle", Callback = function() end})
 
--- --- TAB CỬA HÀNG ---
-Tabs.Shop:AddSection("Mua Đồ Nhanh")
-Tabs.Shop:AddButton({Title = "Mua Melee Superhuman", Callback = function() end})
-Tabs.Shop:AddButton({Title = "Mua Chip Raid", Callback = function() end})
-Tabs.Shop:AddButton({Title = "Random Trái Ác Quỷ", Callback = function() end})
+-- --- TAB HỆ THỐNG (WEBHOOK & THEME) ---
+Tabs.Misc:AddSection("Quản Lý Hub")
+Tabs.Misc:AddInput("WebhookURL", {
+    Title = "Dán Link Webhook Discord",
+    Default = "",
+    Placeholder = "https://discord.com/api/webhooks/...",
+    Callback = function(Value) _G.WebhookURL = Value end
+})
+Tabs.Misc:AddToggle("AutoWebhook", {Title = "Gửi Thông Báo Khi Lên Cấp", Default = false})
 
--- --- TAB HỆ THỐNG ---
-Tabs.Misc:AddToggle("WhiteScreen", {Title = "White Screen (Treo Máy)", Default = false}):OnChanged(function()
-    game:GetService("RunService"):Set3dRenderingEnabled(not Fluent.Options.WhiteScreen.Value)
-end)
+Tabs.Misc:AddSection("Giao Diện")
+Tabs.Misc:AddDropdown("ThemeChange", {
+    Title = "Đổi Màu Menu",
+    Values = {"Dark", "Aqua", "Amethyst", "Rose"},
+    Default = "Dark",
+    Callback = function(Value) Window:SetTheme(Value) end
+})
 
--- [[ 3. TẠO NÚT TRÒN BẬT/TẮT MENU (SAU CÙNG) ]]
+-- [[ NÚT TRÒN TRỨ DANH ]]
 local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
 local ToggleButton = Instance.new("TextButton", ScreenGui)
 ToggleButton.Size = UDim2.new(0, 45, 0, 45)
@@ -63,7 +72,6 @@ ToggleButton.Position = UDim2.new(0, 30, 0, 150)
 ToggleButton.Text = "🍎"
 ToggleButton.TextSize = 28
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleButton.Draggable = true 
 local UICorner = Instance.new("UICorner", ToggleButton)
 UICorner.CornerRadius = UDim.new(1, 0)
@@ -77,4 +85,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã Fix 100% lỗi hiện chức năng!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub Platinum", Content = "Đã cập nhật ESP & Hệ thống Webhook!", Duration = 5})
