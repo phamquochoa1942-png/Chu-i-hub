@@ -17,6 +17,8 @@ _G.StatPoint = "Melee"
 _G.SelectWeapon = "Melee"
 _G.AutoRaid = false
 _G.InfiniteDash = false
+_G.AutoMaterial = false
+_G.SelectMaterial = ""
 
 -- [[ TỔNG HỢP CÁC TAB ]]
 local Tabs = {
@@ -34,11 +36,33 @@ Tabs.Main:AddSection("Cày Cấp & Tiền")
 local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
+    if not FarmToggle.Value then
+        _G.AutoFarm = false -- Ép chết biến ngay lập tức
+    end
 end)
 
 local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
 ChestToggle:OnChanged(function()
     _G.AutoChest = ChestToggle.Value
+end)
+
+-- --- ADD THÊM FARM NGUYÊN LIỆU (SEA 1-2-3) ---
+Tabs.Main:AddSection("Farm Nguyên Liệu")
+
+local MatDropdown = Tabs.Main:AddDropdown("SelectMaterial", {
+    Title = "Chọn Nguyên Liệu",
+    Values = {
+        "Magma Ore (Sea 1)", "Leather (Sea 1)", "Fish Tail (Sea 1)", 
+        "Mystic Droplet (Sea 2)", "Vampire Fang (Sea 2)", "Radioactive Material (Sea 2)",
+        "Dragon Scale (Sea 3)", "Conjured Cocoa (Sea 3)", "Bones (Sea 3)"
+    },
+    Default = "Bones (Sea 3)",
+    Callback = function(Value) _G.SelectMaterial = Value end
+})
+
+local MatToggle = Tabs.Main:AddToggle("AutoMat", {Title = "Auto Farm Nguyên Liệu", Default = false})
+MatToggle:OnChanged(function()
+    _G.AutoMaterial = MatToggle.Value
 end)
 
 -- --- TAB CHIẾN ĐẤU ---
@@ -108,23 +132,25 @@ end})
 
 Tabs.Misc:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 
--- [[ LOGIC VẬN HÀNH TÁCH BIỆT - CHỐNG XUNG ĐỘT UI ]]
+-- [[ LOGIC VẬN HÀNH TÁCH BIỆT - DỨT ĐIỂM GIẬT NÚT ]]
 
--- Logic Farm riêng (Thread ngắt cứng)
+-- Logic Farm & Material (Thread kiểm soát gắt gao)
 task.spawn(function()
     while true do
-        if _G.AutoFarm then
+        task.wait(0.01)
+        if _G.AutoFarm or _G.AutoMaterial then
             pcall(function()
-                -- Ngắt tức thì ngay khi biến đổi sang false
-                if not _G.AutoFarm then return end
+                -- Cơ chế Dừng Cứng: Nếu cả 2 đều false thì thoát pcall ngay
+                if not _G.AutoFarm and not _G.AutoMaterial then return end
                 
                 game:GetService("VirtualUser"):CaptureController()
                 game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
                 
                 if _G.BringMob then
                     for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        -- Kiểm tra cực nhanh để dừng loop bring mob
-                        if not _G.AutoFarm then break end
+                        -- Kiểm tra biến liên tục trong loop để ngắt giật nút
+                        if not _G.AutoFarm and not _G.AutoMaterial then break end
+                        
                         if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
                             v.HumanoidRootPart.CanCollide = false
                             v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
@@ -134,13 +160,13 @@ task.spawn(function()
                 end
             end)
         end
-        task.wait(0.01) -- Đảm bảo không bị giật lag luồng
     end
 end)
 
 -- Logic Rương riêng
 task.spawn(function()
     while true do
+        task.wait(0.1)
         if _G.AutoChest then
             for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
                 if not _G.AutoChest then break end 
@@ -150,19 +176,18 @@ task.spawn(function()
                 end
             end
         end
-        task.wait(0.1)
     end
 end)
 
--- Logic Dash & Stats
+-- Logic Dash
 task.spawn(function()
     while true do
+        task.wait(0.1)
         if _G.InfiniteDash then
             pcall(function()
                 debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
             end)
         end
-        task.wait(0.1)
     end
 end)
 
@@ -185,4 +210,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã FIX lỗi giật nút Farm cho chủ tịch Quoc Hoa!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã Fix giật nút & Add Farm Nguyên Liệu cho chủ tịch!", Duration = 5})
