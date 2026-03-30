@@ -30,12 +30,51 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "⚙️ Settings", Icon = "settings" })
 }
 
+-- --- HỆ THỐNG LOGIC VẬN HÀNH SIÊU TỐC (FIX GIẬT NÚT) ---
+
+local farmCoroutine = nil
+
+local function updateFarmState()
+    local isEnabled = _G.AutoFarm or _G.AutoMaterial
+    
+    -- Hủy luồng cũ nếu có
+    if farmCoroutine then 
+        task.cancel(farmCoroutine) 
+        farmCoroutine = nil
+    end
+    
+    -- Nếu bật thì tạo luồng mới chạy tức thì
+    if isEnabled then
+        farmCoroutine = task.spawn(function()
+            while true do
+                pcall(function()
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                    
+                    if _G.BringMob then
+                        local enemies = game:GetService("Workspace").Enemies:GetChildren()
+                        for _, v in pairs(enemies) do
+                            if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                                v.HumanoidRootPart.CanCollide = false
+                                v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                                v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                            end
+                        end
+                    end
+                end)
+                task.wait() -- Tần số quét nhanh nhất của game
+            end
+        end)
+    end
+end
+
 -- --- TAB FARM TỔNG ---
 Tabs.Main:AddSection("Cày Cấp & Tiền")
 
 local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
+    updateFarmState() -- Gọi phản ứng tức thì
 end)
 
 local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
@@ -60,6 +99,7 @@ local MatDropdown = Tabs.Main:AddDropdown("SelectMaterial", {
 local MatToggle = Tabs.Main:AddToggle("AutoMat", {Title = "Auto Farm Nguyên Liệu", Default = false})
 MatToggle:OnChanged(function()
     _G.AutoMaterial = MatToggle.Value
+    updateFarmState() -- Gọi phản ứng tức thì
 end)
 
 -- --- TAB CHIẾN ĐẤU ---
@@ -129,63 +169,7 @@ end})
 
 Tabs.Settings:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 
--- [[ HỆ THỐNG LOGIC VẬN HÀNH - FIX GIẬT NÚT ]]
-
--- Tạo biến điều khiển vòng lặp riêng
-local farmRunning = false
-local farmCoroutine = nil
-
--- Hàm xử lý farm
-local function startFarm()
-    if farmCoroutine then return end
-    farmCoroutine = task.spawn(function()
-        while farmRunning do
-            if _G.AutoFarm or _G.AutoMaterial then
-                pcall(function()
-                    game:GetService("VirtualUser"):CaptureController()
-                    game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
-                    
-                    if _G.BringMob then
-                        local enemies = game:GetService("Workspace").Enemies:GetChildren()
-                        for _, v in pairs(enemies) do
-                            if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                                pcall(function()
-                                    v.HumanoidRootPart.CanCollide = false
-                                    v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
-                                    v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-                                end)
-                            end
-                        end
-                    end
-                end)
-            end
-            task.wait()
-        end
-        farmCoroutine = nil
-    end)
-end
-
--- Hàm dừng farm
-local function stopFarm()
-    farmRunning = false
-    if farmCoroutine then
-        task.wait(0.1)
-        farmCoroutine = nil
-    end
-end
-
--- Theo dõi trạng thái AutoFarm
-task.spawn(function()
-    while true do
-        if (_G.AutoFarm or _G.AutoMaterial) and not farmRunning then
-            farmRunning = true
-            startFarm()
-        elseif not (_G.AutoFarm or _G.AutoMaterial) and farmRunning then
-            stopFarm()
-        end
-        task.wait(0.1)
-    end
-end)
+-- --- CÁC LUỒNG PHỤ (FIXED) ---
 
 -- Luồng Chest
 task.spawn(function()
@@ -239,4 +223,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã fix hoàn toàn lỗi giật nút!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã tối ưu hóa phản hồi nút bấm!", Duration = 5})
