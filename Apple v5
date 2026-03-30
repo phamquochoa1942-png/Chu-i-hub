@@ -30,27 +30,27 @@ local Tabs = {
     Settings = Window:AddTab({ Title = "⚙️ Settings", Icon = "settings" })
 }
 
--- --- HỆ THỐNG LOGIC VẬN HÀNH SIÊU TỐC (FIX GIẬT NÚT) ---
+-- --- HỆ THỐNG LOGIC VẬN HÀNH (FIXED & GIỮ NGUYÊN BRINGMOB) ---
 
 local farmCoroutine = nil
 
-local function updateFarmState()
-    local isEnabled = _G.AutoFarm or _G.AutoMaterial
-    
-    -- Hủy luồng cũ nếu có
+local function updateFarm()
+    -- Hủy luồng cũ để tránh bị chồng chéo hoặc giật
     if farmCoroutine then 
         task.cancel(farmCoroutine) 
-        farmCoroutine = nil
+        farmCoroutine = nil 
     end
     
-    -- Nếu bật thì tạo luồng mới chạy tức thì
-    if isEnabled then
+    -- Nếu một trong hai chế độ farm được bật
+    if _G.AutoFarm or _G.AutoMaterial then
         farmCoroutine = task.spawn(function()
             while true do
                 pcall(function()
+                    -- Tự động click đánh
                     game:GetService("VirtualUser"):CaptureController()
                     game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
                     
+                    -- Logic BringMob (Gom quái)
                     if _G.BringMob then
                         local enemies = game:GetService("Workspace").Enemies:GetChildren()
                         for _, v in pairs(enemies) do
@@ -62,7 +62,7 @@ local function updateFarmState()
                         end
                     end
                 end)
-                task.wait() -- Tần số quét nhanh nhất của game
+                task.wait() -- Tốc độ quét tối đa của game
             end
         end)
     end
@@ -74,7 +74,7 @@ Tabs.Main:AddSection("Cày Cấp & Tiền")
 local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
-    updateFarmState() -- Gọi phản ứng tức thì
+    updateFarm() -- Kích hoạt ngay lập tức khi nhấn nút
 end)
 
 local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
@@ -99,7 +99,7 @@ local MatDropdown = Tabs.Main:AddDropdown("SelectMaterial", {
 local MatToggle = Tabs.Main:AddToggle("AutoMat", {Title = "Auto Farm Nguyên Liệu", Default = false})
 MatToggle:OnChanged(function()
     _G.AutoMaterial = MatToggle.Value
-    updateFarmState() -- Gọi phản ứng tức thì
+    updateFarm() -- Kích hoạt ngay lập tức khi nhấn nút
 end)
 
 -- --- TAB CHIẾN ĐẤU ---
@@ -169,7 +169,7 @@ end})
 
 Tabs.Settings:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 
--- --- CÁC LUỒNG PHỤ (FIXED) ---
+-- --- CÁC LUỒNG PHỤ (GIỮ NGUYÊN) ---
 
 -- Luồng Chest
 task.spawn(function()
@@ -223,4 +223,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã tối ưu hóa phản hồi nút bấm!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã fix lỗi giật và bật farm cực nhạy!", Duration = 5})
