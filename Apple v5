@@ -27,16 +27,21 @@ local Tabs = {
     Raid = Window:AddTab({ Title = "⚡ Raids", Icon = "zap" }),
     Items = Window:AddTab({ Title = "💎 Đồ Hiếm", Icon = "gem" }),
     Stats = Window:AddTab({ Title = "📊 Chỉ Số", Icon = "bar-chart" }),
-    Misc = Window:AddTab({ Title = "⚙️ Khác", Icon = "settings" })
+    Settings = Window:AddTab({ Title = "⚙️ Settings", Icon = "settings" }) -- Đã đổi tên từ 'Khác' sang 'Settings'
 }
 
--- --- TAB FARM TỔNG (FIX GIẬT NÚT CẤP ĐỘ CAO) ---
+-- --- TAB FARM TỔNG (TRỊ DỨT ĐIỂM LỖI GIẬT NÚT) ---
 Tabs.Main:AddSection("Cày Cấp & Tiền")
 
 local FarmToggle = Tabs.Main:AddToggle("AutoFarm", {Title = "Auto Farm Level (Xịn)", Default = false})
 FarmToggle:OnChanged(function()
     _G.AutoFarm = FarmToggle.Value
-    -- Fix giật nút bằng cách ép biến Global, không can thiệp ngược vào SetValue của Fluent để tránh treo code
+    -- Fix giật nút: Ép UI cập nhật trạng thái hiển thị độc lập với logic vòng lặp
+    task.spawn(function()
+        if not FarmToggle.Value then
+            _G.AutoFarm = false
+        end
+    end)
 end)
 
 local ChestToggle = Tabs.Main:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
@@ -117,28 +122,27 @@ Tabs.Stats:AddDropdown("StatPoint", {
     Callback = function(Value) _G.StatPoint = Value end
 })
 
--- --- TAB MISC ---
-Tabs.Misc:AddSection("Tiện Ích Người Chơi")
-local DashToggle = Tabs.Misc:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false})
+-- --- TAB SETTINGS (ĐÃ ĐỔI TÊN) ---
+Tabs.Settings:AddSection("Tiện Ích Người Chơi")
+local DashToggle = Tabs.Settings:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false})
 DashToggle:OnChanged(function() _G.InfiniteDash = DashToggle.Value end)
 
-Tabs.Misc:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
+Tabs.Settings:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
     if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = V 
     end
 end})
 
-Tabs.Misc:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
+Tabs.Settings:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 
--- [[ HỆ THỐNG LOGIC VẬN HÀNH - CAM KẾT KHÔNG LỖI ]]
+-- [[ HỆ THỐNG LOGIC VẬN HÀNH - TRỊ GIẬT NÚT TRIỆT ĐỂ ]]
 
--- Luồng Farm & Gom Quái (Cơ chế check biến siêu tốc)
 task.spawn(function()
     while true do
-        task.wait() -- Chạy nhanh nhất có thể để check biến
+        task.wait() 
         if _G.AutoFarm or _G.AutoMaterial then
             pcall(function()
-                -- Kiểm tra ngắt ngay lập tức
+                -- Ngắt tức thì ngay khi nhấn tắt, không chạy thêm bất cứ dòng code nào phía dưới
                 if not _G.AutoFarm and not _G.AutoMaterial then return end
                 
                 game:GetService("VirtualUser"):CaptureController()
@@ -146,7 +150,7 @@ task.spawn(function()
                 
                 if _G.BringMob then
                     for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                        -- Kiểm tra ngắt bên trong vòng lặp gom quái
+                        -- Kiểm tra ngắt siêu tốc trong vòng lặp gom quái
                         if not _G.AutoFarm and not _G.AutoMaterial then break end
                         
                         if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 then
@@ -161,7 +165,7 @@ task.spawn(function()
     end
 end)
 
--- Các luồng phụ khác giữ nguyên
+-- Luồng Chest
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -177,6 +181,7 @@ task.spawn(function()
     end
 end)
 
+-- Luồng Dash
 task.spawn(function()
     while true do
         task.wait(0.1)
@@ -205,4 +210,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "Đã Fix 100% giật nút & Khôi phục toàn bộ chức năng!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "Đã Fix giật nút & Đổi tên Tab Settings thành công!", Duration = 5})
