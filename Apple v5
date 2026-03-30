@@ -1,4 +1,4 @@
--- [[ KHỞI TẠO FRAMEWORK UI MỚI - STYLE SIDEBAR ]]
+
 local ScreenGui = Instance.new("ScreenGui")
 local MainFrame = Instance.new("Frame")
 local LeftSidebar = Instance.new("Frame")
@@ -241,7 +241,7 @@ task.spawn(function()
         if _G.AutoChest then
             for _,v in pairs(game:GetService("Workspace"):GetChildren()) do
                 if v.Name:find("Chest") and v:IsA("BasePart") then
-                    pcall(function() game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame task.wait(0.2) end)
+                    pcall(function() e.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame task.wait(0.2) end)
                 end
             end
         end
