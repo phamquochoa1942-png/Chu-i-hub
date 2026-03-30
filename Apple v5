@@ -129,85 +129,93 @@ end})
 
 Tabs.Settings:AddButton({Title = "Đổi Server (Server Hop)", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
 
--- [[ HỆ THỐNG LOGIC VẬN HÀNH - ĐÃ FIX GIẬT NÚT ]]
+-- [[ HỆ THỐNG LOGIC VẬN HÀNH - FIX GIẬT NÚT ]]
 
--- Luồng Auto Farm & Auto Material
-task.spawn(function()
-    local lastFarmState = false
-    local lastMatState = false
-    
-    while true do
-        task.wait()
-        
-        -- Kiểm tra nếu cả hai đều tắt thì bỏ qua hoàn toàn
-        if not _G.AutoFarm and not _G.AutoMaterial then
-            if lastFarmState ~= _G.AutoFarm or lastMatState ~= _G.AutoMaterial then
-                lastFarmState = _G.AutoFarm
-                lastMatState = _G.AutoMaterial
-            end
-            continue
-        end
-        
-        lastFarmState = _G.AutoFarm
-        lastMatState = _G.AutoMaterial
-        
-        pcall(function()
-            -- Chỉ chạy click nếu đang bật farm
+-- Tạo biến điều khiển vòng lặp riêng
+local farmRunning = false
+local farmCoroutine = nil
+
+-- Hàm xử lý farm
+local function startFarm()
+    if farmCoroutine then return end
+    farmCoroutine = task.spawn(function()
+        while farmRunning do
             if _G.AutoFarm or _G.AutoMaterial then
-                game:GetService("VirtualUser"):CaptureController()
-                game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
-            end
-            
-            -- Gom quái chỉ khi bật BringMob VÀ đang farm
-            if _G.BringMob and (_G.AutoFarm or _G.AutoMaterial) then
-                local enemies = game:GetService("Workspace").Enemies:GetChildren()
-                for _, v in pairs(enemies) do
-                    -- Kiểm tra ngắt nhanh
-                    if not _G.AutoFarm and not _G.AutoMaterial then break end
+                pcall(function()
+                    game:GetService("VirtualUser"):CaptureController()
+                    game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
                     
-                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                        pcall(function()
-                            v.HumanoidRootPart.CanCollide = false
-                            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
-                            v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-                        end)
+                    if _G.BringMob then
+                        local enemies = game:GetService("Workspace").Enemies:GetChildren()
+                        for _, v in pairs(enemies) do
+                            if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                                pcall(function()
+                                    v.HumanoidRootPart.CanCollide = false
+                                    v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                                    v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                                end)
+                            end
+                        end
                     end
-                end
+                end)
             end
-        end)
+            task.wait()
+        end
+        farmCoroutine = nil
+    end)
+end
+
+-- Hàm dừng farm
+local function stopFarm()
+    farmRunning = false
+    if farmCoroutine then
+        task.wait(0.1)
+        farmCoroutine = nil
+    end
+end
+
+-- Theo dõi trạng thái AutoFarm
+task.spawn(function()
+    while true do
+        if (_G.AutoFarm or _G.AutoMaterial) and not farmRunning then
+            farmRunning = true
+            startFarm()
+        elseif not (_G.AutoFarm or _G.AutoMaterial) and farmRunning then
+            stopFarm()
+        end
+        task.wait(0.1)
     end
 end)
 
--- Luồng Chest (đã tối ưu)
+-- Luồng Chest
 task.spawn(function()
     while true do
-        task.wait(0.15)
         if _G.AutoChest then
             local chests = game:GetService("Workspace"):GetChildren()
             for i,v in pairs(chests) do
-                if not _G.AutoChest then break end 
                 if v.Name:find("Chest") and v:IsA("BasePart") then
                     pcall(function()
                         game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                        task.wait(0.2)
+                        task.wait(0.15)
                     end)
                 end
             end
         end
+        task.wait(0.1)
     end
 end)
 
 -- Luồng Dash
 task.spawn(function()
     while true do
-        task.wait(0.1)
         if _G.InfiniteDash then
             pcall(function() 
-                if getrenv and getrenv()._G and getrenv()._G.Characters and getrenv()._G.Characters.Dash then
-                    debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0) 
+                if getrenv()._G.Characters.Dash then
+                    debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
                 end
             end)
         end
+        task.wait(0.1)
     end
 end)
 
@@ -231,4 +239,4 @@ ToggleButton.MouseButton1Click:Connect(function()
 end)
 
 Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã fix hoàn toàn lỗi giật nút Auto Farm!", Duration = 5})
+Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã fix hoàn toàn lỗi giật nút!", Duration = 5})
