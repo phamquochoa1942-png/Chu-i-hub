@@ -1,52 +1,13 @@
+local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
-local ScreenGui = Instance.new("ScreenGui")
-local MainFrame = Instance.new("Frame")
-local LeftSidebar = Instance.new("Frame")
-local RightContent = Instance.new("Frame")
-local TabContainer = Instance.new("ScrollingFrame")
-local UIListLayout = Instance.new("UIListLayout")
+local Window = Fluent:CreateWindow({
+    Title = "🍎 Apple Hub | V5 Banana Killer (GOD)",
+    SubTitle = "By Quoc Hoa",
+    TabWidth = 180, Size = UDim2.fromOffset(600, 480), Acrylic = true, Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.LeftControl 
+})
 
-ScreenGui.Parent = game:GetService("CoreGui")
-ScreenGui.Name = "AppleHub_ModernUI"
-
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
-MainFrame.Position = UDim2.new(0.5, -290, 0.5, -230)
-MainFrame.Size = UDim2.new(0, 580, 0, 460)
-MainFrame.Active = true
-MainFrame.Draggable = true
-Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
-
-LeftSidebar.Name = "LeftSidebar"
-LeftSidebar.Parent = MainFrame
-LeftSidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-LeftSidebar.Size = UDim2.new(0, 160, 1, 0)
-Instance.new("UICorner", LeftSidebar).CornerRadius = UDim.new(0, 10)
-
-local Title = Instance.new("TextLabel", LeftSidebar)
-Title.Size = UDim2.new(1, 0, 0, 50)
-Title.Text = "🍎 Apple Hub V5"
-Title.TextColor3 = Color3.fromRGB(255, 50, 50)
-Title.Font = Enum.Font.GothamBold
-Title.TextSize = 16
-Title.BackgroundTransparency = 1
-
-TabContainer.Parent = LeftSidebar
-TabContainer.Position = UDim2.new(0, 0, 0, 60)
-TabContainer.Size = UDim2.new(1, 0, 1, -70)
-TabContainer.BackgroundTransparency = 1
-TabContainer.ScrollBarThickness = 0
-UIListLayout.Parent = TabContainer
-UIListLayout.Padding = UDim.new(0, 5)
-
-RightContent.Name = "RightContent"
-RightContent.Parent = MainFrame
-RightContent.Position = UDim2.new(0, 170, 0, 10)
-RightContent.Size = UDim2.new(1, -180, 1, -20)
-RightContent.BackgroundTransparency = 1
-
--- [[ HỆ THỐNG BIẾN ĐIỀU KHIỂN - GIỮ NGUYÊN ]]
+-- [[ HỆ THỐNG BIẾN ĐIỀU KHIỂN ]]
 _G.AutoFarm = false
 _G.AutoChest = false
 _G.BringMob = true
@@ -59,207 +20,160 @@ _G.InfiniteDash = false
 _G.AutoMaterial = false
 _G.SelectMaterial = ""
 
--- [[ HÀM TẠO COMPONENT UI ]]
-local Pages = {}
-function CreatePage(name)
-    local PageFrame = Instance.new("ScrollingFrame", RightContent)
-    PageFrame.Size = UDim2.new(1, 0, 1, 0)
-    PageFrame.BackgroundTransparency = 1
-    PageFrame.Visible = false
-    PageFrame.ScrollBarThickness = 2
-    Instance.new("UIListLayout", PageFrame).Padding = UDim.new(0, 8)
-    
-    local TabBtn = Instance.new("TextButton", TabContainer)
-    TabBtn.Size = UDim2.new(1, -10, 0, 35)
-    TabBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    TabBtn.Text = "  " .. name
-    TabBtn.TextColor3 = Color3.fromRGB(200, 200, 200)
-    TabBtn.TextXAlignment = Enum.TextXAlignment.Left
-    TabBtn.Font = Enum.Font.Gotham
-    TabBtn.TextSize = 13
-    Instance.new("UICorner", TabBtn).CornerRadius = UDim.new(0, 6)
-    
-    TabBtn.MouseButton1Click:Connect(function()
-        for _, p in pairs(Pages) do p.Visible = false end
-        PageFrame.Visible = true
-    end)
-    Pages[name] = PageFrame
-    return PageFrame
-end
+-- [[ TỔNG HỢP CÁC TAB - THEO GIAO DIỆN MỚI ]]
+local Tabs = {
+    Home = Window:AddTab({ Title = "Tab Home", Icon = "home" }),
+    Farming = Window:AddTab({ Title = "Tab Farming", Icon = "shovels" }),
+    Setting = Window:AddTab({ Title = "Tab Setting", Icon = "settings" }),
+    Fishing = Window:AddTab({ Title = "Tab Fishing", Icon = "fish" }),
+    QuestItem = Window:AddTab({ Title = "Tab Quest And Item", Icon = "clipboard-list" }),
+    SeaEvent = Window:AddTab({ Title = "Tab Sea Event", Icon = "waves" }),
+    MirageRace = Window:AddTab({ Title = "Tab Mirage And Race", Icon = "compass" }),
+    StatsEsp = Window:AddTab({ Title = "Tab Stats And Esp", Icon = "bar-chart" }),
+    FruitRaid = Window:AddTab({ Title = "Tab Fruit And Raid", Icon = "zap" })
+}
 
-function AddToggle(parent, text, default, callback)
-    local Btn = Instance.new("TextButton", parent)
-    Btn.Size = UDim2.new(1, -10, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Btn.Text = "  " .. text
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    
-    local Status = Instance.new("Frame", Btn)
-    Status.Size = UDim2.new(0, 35, 0, 18)
-    Status.Position = UDim2.new(1, -45, 0.5, -9)
-    Status.BackgroundColor3 = default and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-    Instance.new("UICorner", Status).CornerRadius = UDim.new(1, 0)
-    
-    local val = default
-    Btn.MouseButton1Click:Connect(function()
-        val = not val
-        Status.BackgroundColor3 = val and Color3.fromRGB(0, 200, 0) or Color3.fromRGB(200, 0, 0)
-        callback(val)
-    end)
-end
+-- --- TAB FARMING (GIAO DIỆN GIỐNG ẢNH) ---
+Tabs.Farming:AddSection("Setting Farm")
 
-function AddButton(parent, text, callback)
-    local Btn = Instance.new("TextButton", parent)
-    Btn.Size = UDim2.new(1, -10, 0, 40)
-    Btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
-    Btn.Text = text
-    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
-    Btn.MouseButton1Click:Connect(callback)
-end
+Tabs.Farming:AddDropdown("WeaponSelect", {
+    Title = "Select Weapon:",
+    Values = {"Melee", "Sword", "Blox Fruit"},
+    Default = "Melee",
+    Callback = function(Value) _G.SelectWeapon = Value end
+})
 
-function AddDropdown(parent, text, list, callback)
-    local Label = Instance.new("TextLabel", parent)
-    Label.Size = UDim2.new(1, -10, 0, 20)
-    Label.Text = "  " .. text
-    Label.TextColor3 = Color3.fromRGB(150, 150, 150)
-    Label.BackgroundTransparency = 1
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local Drop = Instance.new("TextButton", parent)
-    Drop.Size = UDim2.new(1, -10, 0, 35)
-    Drop.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-    Drop.Text = list[1]
-    Drop.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Instance.new("UICorner", Drop).CornerRadius = UDim.new(0, 6)
-    
-    Drop.MouseButton1Click:Connect(function()
-        local current = table.find(list, Drop.Text) or 0
-        local nextIdx = (current % #list) + 1
-        Drop.Text = list[nextIdx]
-        callback(list[nextIdx])
-    end)
-end
+local FastAttackToggle = Tabs.Farming:AddToggle("FastAttack", {
+    Title = "Select Fast Delay: Fast Attack",
+    Default = true
+})
+FastAttackToggle:OnChanged(function() _G.FastAttack = FastAttackToggle.Value end)
 
-function AddSlider(parent, text, min, max, default, callback)
-    local Container = Instance.new("Frame", parent)
-    Container.Size = UDim2.new(1, -10, 0, 50)
-    Container.BackgroundTransparency = 1
-    
-    local Label = Instance.new("TextLabel", Container)
-    Label.Text = "  " .. text .. ": " .. default
-    Label.Size = UDim2.new(1, 0, 0, 25)
-    Label.TextColor3 = Color3.fromRGB(255, 255, 255)
-    Label.BackgroundTransparency = 1
-    Label.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local Bar = Instance.new("Frame", Container)
-    Bar.Size = UDim2.new(1, 0, 0, 5)
-    Bar.Position = UDim2.new(0, 0, 0, 35)
-    Bar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    
-    local Fill = Instance.new("Frame", Bar)
-    Fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
-    Fill.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
-    
-    -- Slider logic đơn giản hóa cho mobile
-    Container.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local percent = math.clamp((input.Position.X - Bar.AbsolutePosition.X) / Bar.AbsoluteSize.X, 0, 1)
-            local val = math.floor(min + (max - min) * percent)
-            Fill.Size = UDim2.new(percent, 0, 1, 0)
-            Label.Text = "  " .. text .. ": " .. val
-            callback(val)
-        end
-    end)
-end
+Tabs.Farming:AddSection("Main")
 
--- [[ PHÂN CHIA TABS & CHỨC NĂNG ]]
-local MainT = CreatePage("🏠 Farm Tổng")
-AddToggle(MainT, "Auto Farm Level (Xịn)", _G.AutoFarm, function(v) _G.AutoFarm = v end)
-AddToggle(MainT, "Auto Farm Rương", _G.AutoChest, function(v) _G.AutoChest = v end)
-AddDropdown(MainT, "Chọn Nguyên Liệu", {"Bones (Sea 3)", "Magma Ore", "Leather", "Fish Tail", "Mystic Droplet", "Vampire Fang", "Radioactive Material", "Dragon Scale", "Conjured Cocoa"}, function(v) _G.SelectMaterial = v end)
-AddToggle(MainT, "Auto Farm Nguyên Liệu", _G.AutoMaterial, function(v) _G.AutoMaterial = v end)
+local FarmToggle = Tabs.Farming:AddToggle("AutoFarm", {Title = "Auto Farm Level", Default = false})
+FarmToggle:OnChanged(function() _G.AutoFarm = FarmToggle.Value end)
 
-local CombatT = CreatePage("⚔️ Chiến Đấu")
-AddToggle(CombatT, "Gom Quái (Bring Mob)", _G.BringMob, function(v) _G.BringMob = v end)
-AddToggle(CombatT, "Fast Attack Pro", _G.FastAttack, function(v) _G.FastAttack = v end)
-AddDropdown(CombatT, "Vũ Khí Đang Dùng", {"Melee", "Sword", "Blox Fruit"}, function(v) _G.SelectWeapon = v end)
+local ChestToggle = Tabs.Farming:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
+ChestToggle:OnChanged(function() _G.AutoChest = ChestToggle.Value end)
 
-local RaidT = CreatePage("⚡ Raids")
-AddToggle(RaidT, "Auto Start & Kill Raid", _G.AutoRaid, function(v) _G.AutoRaid = v end)
-AddButton(RaidT, "Mua Chip (Mystery Scientist)", function() game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer("RaidsEntity","BuyChip") end)
+-- --- TAB QUEST AND ITEM (NGUYÊN LIỆU) ---
+Tabs.QuestItem:AddSection("Farm Material")
 
-local ItemT = CreatePage("💎 Đồ Hiếm")
-AddButton(ItemT, "Auto Nhặt Trái Ác Quỷ", function()
-    for _,v in pairs(game:GetService("Workspace"):GetChildren()) do
-        if v:IsA("Tool") and v.Name:find("Fruit") then
-            game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+Tabs.QuestItem:AddDropdown("SelectMaterial", {
+    Title = "Chọn Nguyên Liệu",
+    Values = {
+        "Magma Ore (Sea 1)", "Leather (Sea 1)", "Fish Tail (Sea 1)", 
+        "Mystic Droplet (Sea 2)", "Vampire Fang (Sea 2)", "Radioactive Material (Sea 2)",
+        "Dragon Scale (Sea 3)", "Conjured Cocoa (Sea 3)", "Bones (Sea 3)"
+    },
+    Default = "Bones (Sea 3)",
+    Callback = function(Value) _G.SelectMaterial = Value end
+})
+
+local MatToggle = Tabs.QuestItem:AddToggle("AutoMat", {Title = "Auto Farm Nguyên Liệu", Default = false})
+MatToggle:OnChanged(function() _G.AutoMaterial = MatToggle.Value end)
+
+-- --- TAB SETTING ---
+Tabs.Setting:AddSection("Player Settings")
+
+local DashToggle = Tabs.Setting:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false})
+DashToggle:OnChanged(function() _G.InfiniteDash = DashToggle.Value end)
+
+Tabs.Setting:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
+    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
+        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = V 
+    end
+end})
+
+Tabs.Setting:AddButton({Title = "Server Hop", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
+
+-- --- TAB FRUIT AND RAID ---
+Tabs.FruitRaid:AddSection("Raid & Fruit")
+
+local RaidToggle = Tabs.FruitRaid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = false})
+RaidToggle:OnChanged(function() _G.AutoRaid = RaidToggle.Value end)
+
+Tabs.FruitRaid:AddButton({
+    Title = "Auto Nhặt Fruit",
+    Callback = function()
+        for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
+            if v:IsA("Tool") and v.Name:find("Fruit") then
+                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
+            end
         end
     end
-end)
+})
 
-local StatsT = CreatePage("📊 Chỉ Số")
-AddToggle(StatsT, "Kích Hoạt Auto Stats", _G.AutoStats, function(v) _G.AutoStats = v end)
-AddDropdown(StatsT, "Cộng Vào:", {"Melee", "Defense", "Sword", "Demon Fruit"}, function(v) _G.StatPoint = v end)
+-- --- TAB COMBAT (Hệ thống gom quái) ---
+local CombatTab = Window:AddTab({ Title = "Combat Tools", Icon = "swords" }) -- Thêm tab phụ để chứa BringMob
+CombatTab:AddSection("Combat Settings")
+local BringMobToggle = CombatTab:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = true})
+BringMobToggle:OnChanged(function() _G.BringMob = BringMobToggle.Value end)
 
-local SettT = CreatePage("⚙️ Settings")
-AddToggle(SettT, "Vô Hạn Dash", _G.InfiniteDash, function(v) _G.InfiniteDash = v end)
-AddSlider(SettT, "Tốc Độ Chạy", 20, 300, 20, function(v) 
-    if game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = v 
-    end
-end)
-AddButton(SettT, "Đổi Server (Server Hop)", function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end)
 
--- [[ HỆ THỐNG LOGIC VẬN HÀNH - GIỮ NGUYÊN TỪ CODE CŨ ]]
+-- [[ HỆ THỐNG LOGIC VẬN HÀNH - ĐÃ FIX GIẬT NÚT ]]
+
 task.spawn(function()
     while true do
         task.wait()
-        if not _G.AutoFarm and not _G.AutoMaterial then continue end
-        pcall(function()
-            game:GetService("VirtualUser"):CaptureController()
-            game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
-            if _G.BringMob then
-                for _, v in pairs(game:GetService("Workspace").Enemies:GetChildren()) do
-                    if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                        v.HumanoidRootPart.CanCollide = false
-                        v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
-                        v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+        if _G.AutoFarm or _G.AutoMaterial then
+            pcall(function()
+                game:GetService("VirtualUser"):CaptureController()
+                game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
+                
+                if _G.BringMob then
+                    local enemies = game:GetService("Workspace").Enemies:GetChildren()
+                    for _, v in pairs(enemies) do
+                        if not (_G.AutoFarm or _G.AutoMaterial) then break end
+                        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                            v.HumanoidRootPart.CanCollide = false
+                            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
+                            v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+                        end
                     end
                 end
-            end
-        end)
-    end
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(0.15)
-        if _G.AutoChest then
-            for _,v in pairs(game:GetService("Workspace"):GetChildren()) do
-                if v.Name:find("Chest") and v:IsA("BasePart") then
-                    pcall(function() e.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame task.wait(0.2) end)
-                end
-            end
-        end
-    end
-end)
-
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if _G.InfiniteDash then
-            pcall(function() 
-                if getrenv()._G.Characters.Dash then debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0) end
             end)
         end
     end
 end)
 
--- [[ NÚT TRÒN MỞ MENU ]]
+-- Luồng Chest
+task.spawn(function()
+    while true do
+        task.wait(0.15)
+        if _G.AutoChest then
+            local chests = game:GetService("Workspace"):GetChildren()
+            for i,v in pairs(chests) do
+                if not _G.AutoChest then break end 
+                if v.Name:find("Chest") and v:IsA("BasePart") then
+                    pcall(function()
+                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
+                        task.wait(0.2)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+-- Luồng Dash
+task.spawn(function()
+    while true do
+        task.wait(0.1)
+        if _G.InfiniteDash then
+            pcall(function() 
+                if getrenv()._G.Characters.Dash then
+                    debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
+                end
+            end)
+        end
+    end
+end)
+
+-- [[ NÚT TRÒN 🍎 ]]
+local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
+ScreenGui.Name = "AppleHubButton"
 local ToggleButton = Instance.new("TextButton", ScreenGui)
 ToggleButton.Size = UDim2.new(0, 50, 0, 50)
 ToggleButton.Position = UDim2.new(0, 20, 0, 200)
@@ -267,7 +181,14 @@ ToggleButton.Text = "🍎"
 ToggleButton.TextSize = 30
 ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
 ToggleButton.Draggable = true 
-Instance.new("UICorner", ToggleButton).CornerRadius = UDim.new(1, 0)
-ToggleButton.MouseButton1Click:Connect(function() MainFrame.Visible = not MainFrame.Visible end)
+local UICorner = Instance.new("UICorner", ToggleButton)
+UICorner.CornerRadius = UDim.new(1, 0)
 
-Pages["🏠 Farm Tổng"].Visible = true
+ToggleButton.MouseButton1Click:Connect(function()
+    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
+    task.wait(0.01)
+    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
+end)
+
+Window:SelectTab(1)
+Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã cập nhật giao diện mới và giữ nguyên chức năng!", Duration = 5})
