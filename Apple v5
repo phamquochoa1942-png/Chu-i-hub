@@ -1,194 +1,159 @@
-local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local Window = Fluent:CreateWindow({
-    Title = "🍎 Apple Hub | V5 Banana Killer (GOD)",
-    SubTitle = "By Quoc Hoa",
-    TabWidth = 180, Size = UDim2.fromOffset(600, 480), Acrylic = true, Theme = "Dark",
-    MinimizeKey = Enum.KeyCode.LeftControl 
+local Window = Rayfield:CreateWindow({
+   Name = "🍎 Apple Hub | V5 Banana Killer (GOD)",
+   LoadingTitle = "Apple Hub V5 - Loading...",
+   LoadingSubtitle = "by Quoc Hoa",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "AppleHubV5",
+      FileName = "Config"
+   },
+   KeySystem = false 
 })
 
--- [[ HỆ THỐNG BIẾN ĐIỀU KHIỂN ]]
-_G.AutoFarm = false
-_G.AutoChest = false
-_G.BringMob = true
-_G.FastAttack = true
-_G.AutoStats = false
-_G.StatPoint = "Melee"
-_G.SelectWeapon = "Melee"
-_G.AutoRaid = false
-_G.InfiniteDash = false
-_G.AutoMaterial = false
-_G.SelectMaterial = ""
-
--- [[ TỔNG HỢP CÁC TAB - THEO GIAO DIỆN MỚI ]]
-local Tabs = {
-    Home = Window:AddTab({ Title = "Tab Home", Icon = "home" }),
-    Farming = Window:AddTab({ Title = "Tab Farming", Icon = "shovels" }),
-    Setting = Window:AddTab({ Title = "Tab Setting", Icon = "settings" }),
-    Fishing = Window:AddTab({ Title = "Tab Fishing", Icon = "fish" }),
-    QuestItem = Window:AddTab({ Title = "Tab Quest And Item", Icon = "clipboard-list" }),
-    SeaEvent = Window:AddTab({ Title = "Tab Sea Event", Icon = "waves" }),
-    MirageRace = Window:AddTab({ Title = "Tab Mirage And Race", Icon = "compass" }),
-    StatsEsp = Window:AddTab({ Title = "Tab Stats And Esp", Icon = "bar-chart" }),
-    FruitRaid = Window:AddTab({ Title = "Tab Fruit And Raid", Icon = "zap" })
-}
-
--- --- TAB FARMING (GIAO DIỆN GIỐNG ẢNH) ---
-Tabs.Farming:AddSection("Setting Farm")
-
-Tabs.Farming:AddDropdown("WeaponSelect", {
-    Title = "Select Weapon:",
-    Values = {"Melee", "Sword", "Blox Fruit"},
-    Default = "Melee",
-    Callback = function(Value) _G.SelectWeapon = Value end
+-- [[ TAB HOME ]]
+local HomeTab = Window:CreateTab("Tab Home", 4483345998)
+HomeTab:CreateSection("Thông Tin Script")
+HomeTab:CreateLabel("Phiên bản: V5 Banana Killer")
+HomeTab:CreateLabel("Người phát triển: Quoc Hoa")
+HomeTab:CreateButton({
+   Name = "Xóa UI (Destroy UI)",
+   Callback = function() Rayfield:Destroy() end,
 })
 
-local FastAttackToggle = Tabs.Farming:AddToggle("FastAttack", {
-    Title = "Select Fast Delay: Fast Attack",
-    Default = true
+-- [[ TAB FARMING ]]
+local FarmingTab = Window:CreateTab("Tab Farming", 4483362458)
+FarmingTab:CreateSection("Setting Farm")
+FarmingTab:CreateDropdown({
+   Name = "Select Weapon:",
+   Options = {"Melee","Sword","Blox Fruit"},
+   CurrentOption = {"Melee"},
+   Callback = function(Option) _G.SelectWeapon = Option[1] end,
 })
-FastAttackToggle:OnChanged(function() _G.FastAttack = FastAttackToggle.Value end)
-
-Tabs.Farming:AddSection("Main")
-
-local FarmToggle = Tabs.Farming:AddToggle("AutoFarm", {Title = "Auto Farm Level", Default = false})
-FarmToggle:OnChanged(function() _G.AutoFarm = FarmToggle.Value end)
-
-local ChestToggle = Tabs.Farming:AddToggle("AutoChest", {Title = "Auto Farm Rương", Default = false})
-ChestToggle:OnChanged(function() _G.AutoChest = ChestToggle.Value end)
-
--- --- TAB QUEST AND ITEM (NGUYÊN LIỆU) ---
-Tabs.QuestItem:AddSection("Farm Material")
-
-Tabs.QuestItem:AddDropdown("SelectMaterial", {
-    Title = "Chọn Nguyên Liệu",
-    Values = {
-        "Magma Ore (Sea 1)", "Leather (Sea 1)", "Fish Tail (Sea 1)", 
-        "Mystic Droplet (Sea 2)", "Vampire Fang (Sea 2)", "Radioactive Material (Sea 2)",
-        "Dragon Scale (Sea 3)", "Conjured Cocoa (Sea 3)", "Bones (Sea 3)"
-    },
-    Default = "Bones (Sea 3)",
-    Callback = function(Value) _G.SelectMaterial = Value end
+FarmingTab:CreateToggle({
+   Name = "Select Fast Delay: Fast Attack",
+   CurrentValue = true,
+   Callback = function(Value) _G.FastAttack = Value end,
+})
+FarmingTab:CreateSection("Main")
+FarmingTab:CreateToggle({
+   Name = "Auto Farm Level",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoFarm = Value end,
+})
+FarmingTab:CreateToggle({
+   Name = "Auto Farm Nearest",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoFarmNearest = Value end,
 })
 
-local MatToggle = Tabs.QuestItem:AddToggle("AutoMat", {Title = "Auto Farm Nguyên Liệu", Default = false})
-MatToggle:OnChanged(function() _G.AutoMaterial = MatToggle.Value end)
-
--- --- TAB SETTING ---
-Tabs.Setting:AddSection("Player Settings")
-
-local DashToggle = Tabs.Setting:AddToggle("InfDash", {Title = "Vô Hạn Dash (Lướt)", Default = false})
-DashToggle:OnChanged(function() _G.InfiniteDash = DashToggle.Value end)
-
-Tabs.Setting:AddSlider("WalkSpeed", {Title = "Tốc Độ Chạy", Default = 20, Min = 20, Max = 300, Rounding = 0, Callback = function(V) 
-    if game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("Humanoid") then
-        game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = V 
-    end
-end})
-
-Tabs.Setting:AddButton({Title = "Server Hop", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer) end})
-
--- --- TAB FRUIT AND RAID ---
-Tabs.FruitRaid:AddSection("Raid & Fruit")
-
-local RaidToggle = Tabs.FruitRaid:AddToggle("AutoRaid", {Title = "Auto Start & Kill Raid", Default = false})
-RaidToggle:OnChanged(function() _G.AutoRaid = RaidToggle.Value end)
-
-Tabs.FruitRaid:AddButton({
-    Title = "Auto Nhặt Fruit",
-    Callback = function()
-        for i,v in pairs(game:GetService("Workspace"):GetChildren()) do
-            if v:IsA("Tool") and v.Name:find("Fruit") then
-                game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.Handle.CFrame
-            end
-        end
-    end
+-- [[ TAB COMBAT (MỚI) ]]
+local CombatTab = Window:CreateTab("Tab Combat", 4483362458)
+CombatTab:CreateSection("PvP Settings")
+CombatTab:CreateToggle({
+   Name = "Auto Click (Fast)",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoClick = Value end,
+})
+CombatTab:CreateToggle({
+   Name = "Silent Aim (Test)",
+   CurrentValue = false,
+   Callback = function(Value) _G.SilentAim = Value end,
+})
+CombatTab:CreateSection("Player Tools")
+CombatTab:CreateButton({
+   Name = "Invis Name",
+   Callback = function() -- Logic sau
+   end,
 })
 
--- --- TAB COMBAT (Hệ thống gom quái) ---
-local CombatTab = Window:AddTab({ Title = "Combat Tools", Icon = "swords" }) -- Thêm tab phụ để chứa BringMob
-CombatTab:AddSection("Combat Settings")
-local BringMobToggle = CombatTab:AddToggle("BringMob", {Title = "Gom Quái (Bring Mob)", Default = true})
-BringMobToggle:OnChanged(function() _G.BringMob = BringMobToggle.Value end)
+-- [[ TAB SEA EVENT (MỚI) ]]
+local SeaTab = Window:CreateTab("Tab Sea Event", 4483362458)
+SeaTab:CreateSection("Ship Farming")
+SeaTab:CreateToggle({
+   Name = "Auto Farm Ship",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoShip = Value end,
+})
+SeaTab:CreateSection("Sea Beasts")
+SeaTab:CreateToggle({
+   Name = "Auto Sea Beast",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoSB = Value end,
+})
+SeaTab:CreateToggle({
+   Name = "Auto Terror Shark",
+   CurrentValue = false,
+   Callback = function(Value) _G.AutoTerror = Value end,
+})
 
+-- [[ TAB QUEST & ITEM ]]
+local QuestTab = Window:CreateTab("Tab Quest & Item", 4483362458)
+QuestTab:CreateSection("Items")
+QuestTab:CreateButton({
+   Name = "Pull Lever (Mirage)",
+   Callback = function() end,
+})
+QuestTab:CreateSection("Materials")
+QuestTab:CreateDropdown({
+   Name = "Select Material:",
+   Options = {"Bones","Conjured Cocoa","Dragon Scale","Fish Tail"},
+   CurrentOption = {"Bones"},
+   Callback = function(Option) _G.SelectMaterial = Option[1] end,
+})
 
--- [[ HỆ THỐNG LOGIC VẬN HÀNH - ĐÃ FIX GIẬT NÚT ]]
+-- [[ TAB STATS & ESP ]]
+local StatsTab = Window:CreateTab("Tab Stats & Esp", 4483362458)
+StatsTab:CreateSection("Auto Stats")
+StatsTab:CreateToggle({
+   Name = "Auto Stats Melee",
+   CurrentValue = false,
+   Callback = function(Value) _G.StatsMelee = Value end,
+})
+StatsTab:CreateSection("Visuals")
+StatsTab:CreateToggle({
+   Name = "ESP Players",
+   CurrentValue = false,
+   Callback = function(Value) _G.EspPlayer = Value end,
+})
+StatsTab:CreateToggle({
+   Name = "ESP Fruit",
+   CurrentValue = false,
+   Callback = function(Value) _G.EspFruit = Value end,
+})
 
-task.spawn(function()
-    while true do
-        task.wait()
-        if _G.AutoFarm or _G.AutoMaterial then
-            pcall(function()
-                game:GetService("VirtualUser"):CaptureController()
-                game:GetService("VirtualUser"):ClickButton1(Vector2.new(50, 50))
-                
-                if _G.BringMob then
-                    local enemies = game:GetService("Workspace").Enemies:GetChildren()
-                    for _, v in pairs(enemies) do
-                        if not (_G.AutoFarm or _G.AutoMaterial) then break end
-                        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                            v.HumanoidRootPart.CanCollide = false
-                            v.HumanoidRootPart.CFrame = game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.new(0, 0, -5)
-                            v.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-end)
+-- [[ TAB SETTING (MỚI) ]]
+local SettingTab = Window:CreateTab("Tab Setting", 4483362458)
+SettingTab:CreateSection("Performance")
+SettingTab:CreateButton({
+   Name = "Fix Lag (Potato Mode)",
+   Callback = function() end,
+})
+SettingTab:CreateSlider({
+   Name = "WalkSpeed",
+   Min = 16,
+   Max = 300,
+   CurrentValue = 16,
+   Flag = "WS",
+   Callback = function(Value)
+      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+   end,
+})
+SettingTab:CreateSection("Server")
+SettingTab:CreateButton({
+   Name = "Server Hop",
+   Callback = function() end,
+})
+SettingTab:CreateButton({
+   Name = "Rejoin Server",
+   Callback = function() end,
+})
 
--- Luồng Chest
-task.spawn(function()
-    while true do
-        task.wait(0.15)
-        if _G.AutoChest then
-            local chests = game:GetService("Workspace"):GetChildren()
-            for i,v in pairs(chests) do
-                if not _G.AutoChest then break end 
-                if v.Name:find("Chest") and v:IsA("BasePart") then
-                    pcall(function()
-                        game.Players.LocalPlayer.Character.HumanoidRootPart.CFrame = v.CFrame
-                        task.wait(0.2)
-                    end)
-                end
-            end
-        end
-    end
-end)
-
--- Luồng Dash
-task.spawn(function()
-    while true do
-        task.wait(0.1)
-        if _G.InfiniteDash then
-            pcall(function() 
-                if getrenv()._G.Characters.Dash then
-                    debug.setupvalue(getrenv()._G.Characters.Dash, 3, 0)
-                end
-            end)
-        end
-    end
-end)
-
--- [[ NÚT TRÒN 🍎 ]]
-local ScreenGui = Instance.new("ScreenGui", game:GetService("CoreGui"))
-ScreenGui.Name = "AppleHubButton"
-local ToggleButton = Instance.new("TextButton", ScreenGui)
-ToggleButton.Size = UDim2.new(0, 50, 0, 50)
-ToggleButton.Position = UDim2.new(0, 20, 0, 200)
-ToggleButton.Text = "🍎"
-ToggleButton.TextSize = 30
-ToggleButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-ToggleButton.Draggable = true 
-local UICorner = Instance.new("UICorner", ToggleButton)
-UICorner.CornerRadius = UDim.new(1, 0)
-
-ToggleButton.MouseButton1Click:Connect(function()
-    game:GetService("VirtualInputManager"):SendKeyEvent(true, Enum.KeyCode.LeftControl, false, game)
-    task.wait(0.01)
-    game:GetService("VirtualInputManager"):SendKeyEvent(false, Enum.KeyCode.LeftControl, false, game)
-end)
-
-Window:SelectTab(1)
-Fluent:Notify({Title = "Apple Hub V5", Content = "✅ Đã cập nhật giao diện mới và giữ nguyên chức năng!", Duration = 5})
+-- [[ THÔNG BÁO ]]
+Rayfield:Notify({
+   Title = "Apple Hub V5",
+   Content = "✅ Đã dựng xong khung UI. Sẵn sàng thêm logic!",
+   Duration = 5,
+   Image = 4483345998,
+})
