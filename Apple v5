@@ -1,8 +1,8 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "🍎 Apple Hub | V5 Banana Killer (GOD)",
-   LoadingTitle = "Apple Hub V5 - Loading...",
+   Name = "🍎 Apple Hub",
+   LoadingTitle = "Apple Hub - Loading...",
    LoadingSubtitle = "by Quoc Hoa",
    ConfigurationSaving = {
       Enabled = true,
@@ -15,7 +15,7 @@ local Window = Rayfield:CreateWindow({
 -- [[ TAB HOME ]]
 local HomeTab = Window:CreateTab("Tab Home", 4483345998)
 HomeTab:CreateSection("Thông Tin Script")
-HomeTab:CreateLabel("Phiên bản: V5 Banana Killer")
+HomeTab:CreateLabel("Phiên bản: V5")
 HomeTab:CreateLabel("Người phát triển: Quoc Hoa")
 HomeTab:CreateButton({
    Name = "Xóa UI (Destroy UI)",
@@ -48,7 +48,7 @@ FarmingTab:CreateToggle({
    Callback = function(Value) _G.AutoFarmNearest = Value end,
 })
 
--- [[ TAB COMBAT (MỚI) ]]
+-- [[ TAB COMBAT ]]
 local CombatTab = Window:CreateTab("Tab Combat", 4483362458)
 CombatTab:CreateSection("PvP Settings")
 CombatTab:CreateToggle({
@@ -68,7 +68,7 @@ CombatTab:CreateButton({
    end,
 })
 
--- [[ TAB SEA EVENT (MỚI) ]]
+-- [[ TAB SEA EVENT ]]
 local SeaTab = Window:CreateTab("Tab Sea Event", 4483362458)
 SeaTab:CreateSection("Ship Farming")
 SeaTab:CreateToggle({
@@ -92,7 +92,7 @@ SeaTab:CreateToggle({
 local QuestTab = Window:CreateTab("Tab Quest & Item", 4483362458)
 QuestTab:CreateSection("Items")
 QuestTab:CreateButton({
-   Name = "Pull Lever (Mirage)",
+   Name = "Pull Level (Mirage)",
    Callback = function() end,
 })
 QuestTab:CreateSection("Materials")
@@ -123,7 +123,7 @@ StatsTab:CreateToggle({
    Callback = function(Value) _G.EspFruit = Value end,
 })
 
--- [[ TAB SETTING (MỚI) ]]
+-- [[ TAB SETTING ]]
 local SettingTab = Window:CreateTab("Tab Setting", 4483362458)
 SettingTab:CreateSection("Performance")
 SettingTab:CreateButton({
@@ -137,7 +137,9 @@ SettingTab:CreateSlider({
    CurrentValue = 16,
    Flag = "WS",
    Callback = function(Value)
-      game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      pcall(function()
+         game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = Value
+      end)
    end,
 })
 SettingTab:CreateSection("Server")
@@ -152,8 +154,8 @@ SettingTab:CreateButton({
 
 -- [[ THÔNG BÁO ]]
 Rayfield:Notify({
-   Title = "Apple Hub V5",
-   Content = "✅ Đã dựng xong khung UI. Sẵn sàng thêm logic!",
+   Title = "Apple Hub",
+   Content = "✅ Đã tải giao diện thành công!",
    Duration = 5,
    Image = 4483345998,
 })
