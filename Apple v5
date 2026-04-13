@@ -1,6 +1,6 @@
 _G.FastAttackAll = true 
 
--- 1. Hàm nhận diện và trang bị Melee (Cầm vũ khí lên)
+-- 1. Hàm nhận diện và trang bị Melee (Tự cầm vũ khí)
 local function EquipMelee()
     local player = game.Players.LocalPlayer
     local character = player.Character
@@ -14,10 +14,8 @@ end
 
 task.spawn(function()
     while _G.FastAttackAll do
-        -- Gọi nhận diện Melee
-        EquipMelee()
+        EquipMelee() -- Tự cầm đồ
 
-        -- Quét toàn bộ quái trong Folder Enemies
         for _, v in pairs(workspace.Enemies:GetChildren()) do
             local humanoid = v:FindFirstChildOfClass("Humanoid")
             local rootPart = v:FindFirstChild("HumanoidRootPart")
@@ -26,17 +24,16 @@ task.spawn(function()
                 local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
                 local magnitude = (playerPart.Position - rootPart.Position).Magnitude
                 
-                -- Chỉ đánh khi quái ở gần (Dưới 50 mét)
+                -- Chỉ đánh khi quái ở gần
                 if magnitude < 50 then 
                     
-                    -- [ CODE 1 ]: RegisterAttack (Vung chiêu)
+                    -- [ TỰ ĐỘNG GỬI REMOTE VUNG KIẾM ] - Giúp rảnh tay 100%
                     local attackArgs = {
                         [1] = 0.5
                     }
                     game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterAttack"):FireServer(unpack(attackArgs))
 
-                    -- [ CODE 2 ]: RegisterHit (Sát thương)
-                    -- Giữ nguyên tham số đánh vào chân hoặc thân như ông yêu cầu
+                    -- [ TỰ ĐỘNG GỬI REMOTE SÁT THƯƠNG ] - Fast Attack siêu tốc
                     local hitArgs = {
                         [1] = v:FindFirstChild("RightUpperLeg") or rootPart,
                         [2] = {},
@@ -47,8 +44,6 @@ task.spawn(function()
                 end
             end
         end
-        
-        -- Tốc độ vung đòn (0.05 giây)
         task.wait(0.05) 
     end
 end)
