@@ -1,14 +1,11 @@
 _G.FastAttackAll = true 
 
--- Hàm tự động lấy vũ khí (Melee/Kiếm)
+-- 1. Hàm nhận diện và trang bị Melee (Cầm vũ khí lên)
 local function EquipMelee()
     local player = game.Players.LocalPlayer
-    local character = player.Character or player.CharacterAdded:Wait()
-    local backpack = player.Backpack
-    
-    -- Nếu trên tay chưa cầm gì thì tìm trong túi đồ
-    if not character:FindFirstChildOfClass("Tool") then
-        local tool = backpack:FindFirstChildOfClass("Tool")
+    local character = player.Character
+    if character and not character:FindFirstChildOfClass("Tool") then
+        local tool = player.Backpack:FindFirstChildOfClass("Tool")
         if tool then
             character.Humanoid:EquipTool(tool)
         end
@@ -17,10 +14,10 @@ end
 
 task.spawn(function()
     while _G.FastAttackAll do
-        -- 1. Tự động cầm vũ khí lên trước khi đánh
+        -- Gọi nhận diện Melee
         EquipMelee()
 
-        -- 2. Quét quái xung quanh
+        -- Quét toàn bộ quái trong Folder Enemies
         for _, v in pairs(workspace.Enemies:GetChildren()) do
             local humanoid = v:FindFirstChildOfClass("Humanoid")
             local rootPart = v:FindFirstChild("HumanoidRootPart")
@@ -29,24 +26,29 @@ task.spawn(function()
                 local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
                 local magnitude = (playerPart.Position - rootPart.Position).Magnitude
                 
+                -- Chỉ đánh khi quái ở gần (Dưới 50 mét)
                 if magnitude < 50 then 
-                    -- 3. Gửi sát thương (Logic ông đã soi)
-                    local args = {
+                    
+                    -- [ CODE 1 ]: RegisterAttack (Vung chiêu)
+                    local attackArgs = {
+                        [1] = 0.5
+                    }
+                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterAttack"):FireServer(unpack(attackArgs))
+
+                    -- [ CODE 2 ]: RegisterHit (Sát thương)
+                    -- Giữ nguyên tham số đánh vào chân hoặc thân như ông yêu cầu
+                    local hitArgs = {
                         [1] = v:FindFirstChild("RightUpperLeg") or rootPart,
                         [2] = {},
-                        [4] = "079004b0" 
+                        [4] = "079004b0"
                     }
+                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(hitArgs))
                     
-                    local remote = game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit")
-                    if remote then
-                        remote:FireServer(unpack(args))
-                    end
                 end
             end
         end
         
-        -- 4. Tốc độ đánh
+        -- Tốc độ vung đòn (0.05 giây)
         task.wait(0.05) 
     end
 end)
- 
