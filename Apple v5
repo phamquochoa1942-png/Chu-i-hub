@@ -6,7 +6,7 @@ local RegisterAttack =game:GetService("ReplicatedStorage").Modules.Net:FindFirst
 local function danhnhanhvl()
 pcall(function()
  RegisterAttack:FireServer(0.5)
- for i, v in pairs(game.Workspace.Enemies:GetChildren() do
+ for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
  if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
  local magnitude = (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
  if magnitude < 60 then 
