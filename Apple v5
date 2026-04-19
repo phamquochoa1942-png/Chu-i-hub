@@ -1,49 +1,24 @@
-_G.FastAttackAll = true 
-
--- 1. Hàm nhận diện và trang bị Melee (Tự cầm vũ khí)
-local function EquipMelee()
-    local player = game.Players.LocalPlayer
-    local character = player.Character
-    if character and not character:FindFirstChildOfClass("Tool") then
-        local tool = player.Backpack:FindFirstChildOfClass("Tool")
-        if tool then
-            character.Humanoid:EquipTool(tool)
-        end
-    end
-end
-
-task.spawn(function()
-    while _G.FastAttackAll do
-        EquipMelee() -- Tự cầm đồ
-
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
-            local humanoid = v:FindFirstChildOfClass("Humanoid")
-            local rootPart = v:FindFirstChild("HumanoidRootPart")
-            
-            if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
-                local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-                local magnitude = (playerPart.Position - rootPart.Position).Magnitude
-                
-                -- Chỉ đánh khi quái ở gần
-                if magnitude < 50 then 
-                    
-                    -- [ TỰ ĐỘNG GỬI REMOTE VUNG KIẾM ] - Giúp rảnh tay 100%
-                    local attackArgs = {
-                        [1] = 0.5
-                    }
-                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterAttack"):FireServer(unpack(attackArgs))
-
-                    -- [ TỰ ĐỘNG GỬI REMOTE SÁT THƯƠNG ] - Fast Attack siêu tốc
-                    local hitArgs = {
-                        [1] = v:FindFirstChild("RightUpperLeg") or rootPart,
-                        [2] = {},
-                        [4] = "079004b0"
-                    }
-                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(hitArgs))
-                    
-                end
-            end
-        end
-        task.wait(0.05) 
-    end
-end)
+G.AutoAttack = true
+local Players = game:GetService("Players")
+local RS = game:GetService("ReplicatedStorage")
+local Plr = Players.LocalPlayer
+local Char = Plr.Character or Plr.CharacterAdded:Wait()
+local RegisterAttack = game:GetService("ReplicatedStorage").Modules.Net("RE/RegisterAttack")
+local function EquipWeapon()
+local hum = Char:FindFirstChild("Humanoid")
+if not hum return tool
+local tool = Char:FindFirstChildOfClass("Tool") or Plr.Backpack:FindFirstChildOfClass("Tool")
+if tool and hum:FindFirstChild("tool.Name") == nil then
+   hum:EquipTool(tool)
+ task.wait(0.5)
+   end
+ task.spawn(function()
+   while true do
+if not EquipWeapon() then
+continue
+  end
+local args = {
+    [1] = 0.5
+}
+pcall(RE/RegisterAttack.FireServer,RE/RegisterAttack)
+task.wait(0.10)
