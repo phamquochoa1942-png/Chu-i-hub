@@ -1,34 +1,25 @@
-_G.AutoAttack = true
-
 local Players = game:GetService("Players")
 local RS = game:GetService("ReplicatedStorage")
 local Plr = Players.LocalPlayer
-local RegisterAttack = game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterAttack")
-local function EquipWeapon()
-local Char = Plr.Character
-if not Char then return nil
- end
-local hum = Char:FindFirstChild("Humanoid")
-local tool = Char:FindFirstChildOfClass("Tool") or Plr.Backpack:FindFirstChildOfClass("Tool")
-  if tool and then
-  if tool.Parent ~= Char
-if tool and hum:FindFirstChild(tool.Name) == nil then
-   hum:EquipTool(tool)
-   end
-   return tool
-   end
-   return nil
-   end
- task.spawn(function()
-   while _G.AutoAttack do
-local Weapon = EquipWeapon()
-if Weapon then
-local args = {
-    [1] = 0.5
-}
-pcall(RegisterAttack.FireServer,RegisterAttack(0.5)
-    end)
+Local Char = Plr.Character or Plr.CharacterAdded:Wait()
+local RegisterAttack =game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterAttack")
+local function danhnhanhvl()
+pcall(function()
+ RegisterAttack:FireServer(0.5)
+ for i, v in pairs(game.Workspace.Enemies:GetChildren() do
+ if v:FindFirstChild("HumanoidRootPart") and v.Humanoid.Health > 0 then
+ local magnitude = (v.HumanoidRootPart.Position - game.Players.LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+ if magnitude < 60 then 
+ RegisterAttack:FireServer(v.HumanoidRootPart)
+               end 
+           end
+       end
+   end)
 end
-    task.wait(0.10)
-   end
- end)
+_G.FastAttack = true
+task.spawn(function()
+while _G.FastAttack do
+   danhnhanhvl()
+ task.wait(0.1)
+     end
+end
