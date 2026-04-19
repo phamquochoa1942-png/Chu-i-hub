@@ -22,4 +22,4 @@ while _G.FastAttack do
    danhnhanhvl()
  task.wait(0.1)
      end
-end
+end)
