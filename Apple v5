@@ -1,219 +1,62 @@
-_G.FastAttackAll = true -- bật tắt fast attack
+_G.FastAttackAll = true
+_G.BringMob = true
 
 task.spawn(function()
-  while _G.FastAttackAll do
-    
-    for _, v in pairs(workspace.enemies:Children())
-    do
-      
-     local humanoid = v:FindFirstChildOfClass("humanoid")
-     local rootPart = v:FindFirstChild("HumanrootPart")
-     
-       if v:lsA("model")
-     and humanoid and 
-     humanoid.Health > 0 and rootPart then
-       -- kiểm tra khoảng cách
-       local player Part = 
-       game.Players.LocalPlayer.Character.HumanoidRootPart
-         local magnitude 
-      = (playerPart.Position - rootPart.Position).magnitude
-      
-      if magnitude < 50 then
-        -- 3 gửi logic
-           _G.FastAttackAll = true -- Bật/Tắt Fast Attack
-
-task.spawn(function()
-    while _G.FastAttackAll do
-        -- 
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
-            
-            local humanoid = v:FindFirstChildOfClass("Humanoid")
-            local rootPart = v:FindFirstChild("HumanoidRootPart")
-            
-            if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
-                -- Kiểm tra khoảng cách 
-                local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-                local magnitude = (playerPart.Position - rootPart.Position).Magnitude
-                
-                if magnitude < 50 then 
-                    -- 3. Gửi Logic Attack (Sử dụng code ông đã soi được)
-                    local args = {
-                        [1] = v:FindFirstChild("RightUpperLeg") or rootPart, -- Ưu tiên đánh vào chân ko có thì đánh vào thân
-                        [2] = {},
-                        [4] = "079004b0" -- Mã Key xác thực của game
-                    }
-                    
-                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(args))
-                end
-            end
-        end
-        
-        -- 4. Tốc độ vung đòn (0.05 là cực nhanh, 0.1 là an toàn)
-        task.wait(0.05) 
-    end
-end)
-
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
-local LocalPlayer = Players.LocalPlayer
-
-
-_G.BringMob = {
-    Enabled = true,           -- Bật/Tắt Bring Mob
-    Range = 500,              -- Phạm vi gom quái (studs)
-    BringSpeed = "Instant",   -- "Instant" hoặc "Smooth"
-    EnableGodMode = true,     -- Không nhận sát thương khi gom
-    ShowEffect = true,        -- Hiển thị vòng tròn tập kết
-    BringToOffset = 5         -- Khoảng cách trước mặt người chơi
-}
-
-local Character, HumanoidRootPart
-local BringConnection = nil
-local EffectPart = nil
-
-
-local function CreateEffect()
-    if EffectPart then EffectPart:Destroy() end
-    
-    EffectPart = Instance.new("Part")
-    EffectPart.Name = "BringMobZone"
-    EffectPart.Size = Vector3.new(6, 0.5, 6)
-    EffectPart.Anchored = true
-    EffectPart.CanCollide = false
-    EffectPart.Transparency = 0.5
-    EffectPart.BrickColor = BrickColor.new("Bright red")
-    EffectPart.Material = Enum.Material.Neon
-    EffectPart.Shape = Enum.PartType.Cylinder
-    EffectPart.Parent = workspace
-    
-    
-    local light = Instance.new("PointLight", EffectPart)
-    light.Color = Color3.fromRGB(255, 100, 100)
-    light.Range = 10
-    light.Brightness = 1
-    light.Enabled = true
-end
-
-
-local function BringMobsAdvanced()
-    if not _G.BringMob.Enabled then return end
-    if not LocalPlayer.Character then return end
-    
-    Character = LocalPlayer.Character
-    HumanoidRootPart = Character:FindFirstChild("HumanoidRootPart")
-    if not HumanoidRootPart then return end
-    
-    local myPos = HumanoidRootPart.Position
-    local targetPos = myPos + HumanoidRootPart.CFrame.LookVector * _G.BringMob.BringToOffset
-    
-    -- Cập nhật vị trí hiệu ứng
-    if _G.BringMob.ShowEffect then
-        if not EffectPart then CreateEffect() end
-        EffectPart.Position = targetPos
-    elseif EffectPart then
-        EffectPart:Destroy()
-        EffectPart = nil
-    end
-    
-    -- God Mode (Vô hiệu va chạm)
-    if _G.BringMob.EnableGodMode then
-        for _, part in ipairs(Character:GetDescendants()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                part.CanCollide = false
-            end
-        end
-    end
-    
-    -- Gom quái từ folder Enemies
-    local enemiesFolder = workspace:FindFirstChild("Enemies")
-    if enemiesFolder then
-        for _, mob in ipairs(enemiesFolder:GetChildren()) do
-            if mob:IsA("Model") and mob:FindFirstChild("Humanoid") and mob:FindFirstChild("HumanoidRootPart") then
-                if mob.Humanoid.Health > 0 then
-                    local mobHRP = mob.HumanoidRootPart
-                    local distance = (mobHRP.Position - myPos).Magnitude
-                    
-                    if distance <= _G.BringMob.Range then
-                        if _G.BringMob.BringSpeed == "Instant" then
-                            -- Dịch chuyển tức thì
-                            mobHRP.CFrame = CFrame.new(targetPos + Vector3.new(
-                                math.random(-2, 2),
-                                0,
-                                math.random(-2, 2)
-                            ))
-                            mobHRP.Velocity = Vector3.zero
-                            mobHRP.RotVelocity = Vector3.zero
-                        else
-                            -- Dịch chuyển mượt (Tween)
-                            local tween = TweenService:Create(mobHRP, 
-                                TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), 
-                                {CFrame = CFrame.new(targetPos + Vector3.new(math.random(-2, 2), 0, math.random(-2, 2)))}
-                            )
-                            tween:Play()
+    while _G.BringMob do
+        local player = game.Players.LocalPlayer
+        local char = player.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local root = char.HumanoidRootPart
+            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                if v:IsA("Model") then
+                    local hum = v:FindFirstChildOfClass("Humanoid")
+                    local hrp = v:FindFirstChild("HumanoidRootPart")
+                    if hum and hum.Health > 0 and hrp then
+                        if (root.Position - hrp.Position).Magnitude <= 200 then
+                            hrp.CFrame = root.CFrame * CFrame.new(0, 0, -5)
                         end
-                        
-                        -- Làm choáng quái (Stun)
-                        mob.Humanoid.WalkSpeed = 0
-                        mob.Humanoid.JumpPower = 0
                     end
                 end
             end
         end
-    end
-end
-
--- // --- HÀM BẬT/TẮT BRING MOB --- \\
-function ToggleBringMob(state)
-    _G.BringMob.Enabled = state
-    
-    if state then
-        if BringConnection then BringConnection:Disconnect() end
-        BringConnection = RunService.Heartbeat:Connect(BringMobsAdvanced)
-        if _G.BringMob.ShowEffect then CreateEffect() end
-        print("✅ Bring Mob đã BẬT")
-    else
-        if BringConnection then
-            BringConnection:Disconnect()
-            BringConnection = nil
-        end
-        if EffectPart then
-            EffectPart:Destroy()
-            EffectPart = nil
-        end
-        print("❌ Bring Mob đã TẮT")
-    end
-end
-
-function SetBringRange(value)
-    _G.BringMob.Range = value
-    print("📏 Phạm vi Bring Mob: " .. value .. " studs")
-end
-
-function ToggleBringEffect(state)
-    _G.BringMob.ShowEffect = state
-    if state and _G.BringMob.Enabled then
-        CreateEffect()
-    elseif EffectPart then
-        EffectPart:Destroy()
-        EffectPart = nil
-    end
-    print(state and "✨ Hiệu ứng Bring Mob BẬT" or "✨ Hiệu ứng Bring Mob TẮT")
-end
-
-function ToggleGodMode(state)
-    _G.BringMob.EnableGodMode = state
-    print(state and "🛡️ God Mode BẬT" or "🛡️ God Mode TẮT")
-end
-
-
-ToggleBringMob(true)
-
-LocalPlayer.CharacterAdded:Connect(function(newChar)
-    Character = newChar
-    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
-    if _G.BringMob.Enabled and _G.BringMob.ShowEffect then
-        CreateEffect()
+        task.wait()
     end
 end)
+
+task.spawn(function()
+    while _G.FastAttackAll do
+        for _, v in pairs(workspace.enemies:Children()) do
+            local humanoid = v:FindFirstChildOfClass("humanoid")
+            local rootPart = v:FindFirstChild("HumanrootPart")
+            if v:lsA("model") and humanoid and humanoid.Health > 0 and rootPart then
+                local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+                local magnitude = (playerPart.Position - rootPart.Position).magnitude
+                if magnitude < 50 then
+                    _G.FastAttackAll = true
+                    task.spawn(function()
+                        while _G.FastAttackAll do
+                            for _, v in pairs(workspace.Enemies:GetChildren()) do
+                                local humanoid = v:FindFirstChildOfClass("Humanoid")
+                                local rootPart = v:FindFirstChild("HumanoidRootPart")
+                                if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
+                                    local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+                                    local magnitude = (playerPart.Position - rootPart.Position).Magnitude
+                                    if magnitude < 50 then
+                                        local args = {
+                                            [1] = v:FindFirstChild("RightUpperLeg") or rootPart,
+                                            [2] = {},
+                                            [4] = "079004b0"
+                                        }
+                                        game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(args))
+                                    end
+                                end
+                            end
+                            task.wait(0.05)
+                        end
+                    end)
+                end
+            end
+        end
+        task.wait(0.05)
+    end
+end) 
