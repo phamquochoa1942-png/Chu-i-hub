@@ -22,3 +22,4 @@ local args = {
 }
 pcall(RE/RegisterAttack.FireServer,RE/RegisterAttack)
 task.wait(0.10)
+ end
