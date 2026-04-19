@@ -1,62 +1,56 @@
-_G.FastAttackAll = true
-_G.BringMob = true
+_G.AutoFarm = true
 
+local Players = game:GetService("Players")
+local Plr = Players.LocalPlayer
+local RS = game:GetService("ReplicatedStorage")
+local RegisterHit = RS.Modules.Net:FindFirstChild("RE/RegisterHit")
+
+-- Hàm này giúp sếp gom tối đa 4 quái bất kể là đảo nào
+local function BringMob()
+    local myRoot = Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart")
+    if not myRoot then return end
+    
+    local count = 0
+    for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
+        -- Chỉ gom quái còn sống và trong bán kính 300m
+        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+            local distance = (v.HumanoidRootPart.Position - myRoot.Position).Magnitude
+            if distance < 300 then
+                count = count + 1
+                -- Kéo quái về sát mặt sếp để đánh cho chuẩn
+                v.HumanoidRootPart.CFrame = myRoot.CFrame * CFrame.new(0, 0, -5)
+                v.HumanoidRootPart.CanCollide = false -- Tắt va chạm để quái không đẩy sếp
+                
+                if count >= 4 then break end -- Gom đủ 4 con thì nghỉ, lượt sau gom tiếp
+            end
+        end
+    end
+end
+
+-- Vòng lặp Fast Attack tự quét quái trong tầm đánh
 task.spawn(function()
-    while _G.BringMob do
-        local player = game.Players.LocalPlayer
-        local char = player.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local root = char.HumanoidRootPart
-            for _, v in pairs(workspace.Enemies:GetChildren()) do
-                if v:IsA("Model") then
-                    local hum = v:FindFirstChildOfClass("Humanoid")
-                    local hrp = v:FindFirstChild("HumanoidRootPart")
-                    if hum and hum.Health > 0 and hrp then
-                        if (root.Position - hrp.Position).Magnitude <= 200 then
-                            hrp.CFrame = root.CFrame * CFrame.new(0, 0, -5)
-                        end
+    while _G.AutoFarm do
+        pcall(function()
+            -- 1. Gọi gom quái về trước
+            BringMob()
+            
+            -- 2. Quét quái trong phạm vi gần để tung đòn RegisterHit
+            for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
+                if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
+                    local dist = (v.HumanoidRootPart.Position - Plr.Character.HumanoidRootPart.Position).Magnitude
+                    
+                    -- Chỉ đánh nếu quái đã ở gần (dưới 15 mét)
+                    if dist < 15 then
+                        local args = {
+                            [1] = v:FindFirstChild("LeftFoot") or v.HumanoidRootPart, -- Tự chọn chân trái hoặc người để đánh
+                            [2] = {},
+                            [4] = "079baa9c" -- Key bảo mật sếp soi được
+                        }
+                        RegisterHit:FireServer(unpack(args))
                     end
                 end
             end
-        end
-        task.wait()
+        end)
+        task.wait(0.1) -- Tốc độ đấm, sếp có thể chỉnh 0.05 nếu muốn nhanh hơn nữa
     end
 end)
-
-task.spawn(function()
-    while _G.FastAttackAll do
-        for _, v in pairs(workspace.enemies:Children()) do
-            local humanoid = v:FindFirstChildOfClass("humanoid")
-            local rootPart = v:FindFirstChild("HumanrootPart")
-            if v:lsA("model") and humanoid and humanoid.Health > 0 and rootPart then
-                local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-                local magnitude = (playerPart.Position - rootPart.Position).magnitude
-                if magnitude < 50 then
-                    _G.FastAttackAll = true
-                    task.spawn(function()
-                        while _G.FastAttackAll do
-                            for _, v in pairs(workspace.Enemies:GetChildren()) do
-                                local humanoid = v:FindFirstChildOfClass("Humanoid")
-                                local rootPart = v:FindFirstChild("HumanoidRootPart")
-                                if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
-                                    local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-                                    local magnitude = (playerPart.Position - rootPart.Position).Magnitude
-                                    if magnitude < 50 then
-                                        local args = {
-                                            [1] = v:FindFirstChild("RightUpperLeg") or rootPart,
-                                            [2] = {},
-                                            [4] = "079004b0"
-                                        }
-                                        game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(args))
-                                    end
-                                end
-                            end
-                            task.wait(0.05)
-                        end
-                    end)
-                end
-            end
-        end
-        task.wait(0.05)
-    end
-end) 
