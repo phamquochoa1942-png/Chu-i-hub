@@ -1,220 +1,338 @@
-_G.FastAttackAll = true
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+local LocalPlayer = Players.LocalPlayer
 
-task.spawn(function()
-    local ReplicatedStorage = game:GetService("ReplicatedStorage")
-    local Players = game:GetService("Players")
-    local VirtualInputManager = game:GetService("VirtualInputManager")
-    local TweenService = game:GetService("TweenService")
-    local RunService = game:GetService("RunService")
-    local LocalPlayer = Players.LocalPlayer
-    local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
-    
-    local IsClicking = false
-    local CurrentTarget = nil
-    local TweenConnection = nil
-    local NoFallConnection = nil
-    local OriginalGravity = workspace.Gravity
-    
-    local function ForceReset()
-        IsClicking = false
-        CurrentTarget = nil
-        
-        if TweenConnection then
-            TweenConnection:Cancel()
-            TweenConnection = nil
-        end
-        
-        if NoFallConnection then
-            NoFallConnection:Disconnect()
-            NoFallConnection = nil
-        end
-        
-        workspace.Gravity = OriginalGravity
-        
-        local Char = LocalPlayer.Character
-        if Char then
-            local Humanoid = Char:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.WalkSpeed = 16
-                Humanoid.JumpPower = 50
-                Humanoid.PlatformStand = false
-                Humanoid.AutoRotate = true
-            end
-            local Root = Char:FindFirstChild("HumanoidRootPart")
-            if Root then
-                Root.Velocity = Vector3.new(0, 0, 0)
-                Root.RotVelocity = Vector3.new(0, 0, 0)
-            end
-            for _, Part in ipairs(Char:GetDescendants()) do
-                if Part:IsA("BasePart") then
-                    Part.CanCollide = true
-                end
-            end
-        end
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FastAttackBF"
+ScreenGui.Parent = CoreGui
+ScreenGui.ResetOnSpawn = false
+
+local ToggleUIBtn = Instance.new("TextButton")
+ToggleUIBtn.Size = UDim2.new(0, 140, 0, 42)
+ToggleUIBtn.Position = UDim2.new(0, 20, 0, 20)
+ToggleUIBtn.BackgroundColor3 = Color3.fromRGB(35, 35, 40)
+ToggleUIBtn.Text = "BLOX FRUIT"
+ToggleUIBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleUIBtn.TextSize = 16
+ToggleUIBtn.Font = Enum.Font.GothamBold
+ToggleUIBtn.Parent = ScreenGui
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 8) Parent = ToggleUIBtn
+Instance.new("UIStroke").Thickness = 1 Color3 = Color3.fromRGB(100, 70, 255) Parent = ToggleUIBtn
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 300, 0, 160)
+MainFrame.Position = UDim2.new(0, 20, 0, 72)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
+MainFrame.BorderSizePixel = 0
+MainFrame.Visible = false
+MainFrame.Parent = ScreenGui
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 10) Parent = MainFrame
+Instance.new("UIStroke").Thickness = 1 Color3 = Color3.fromRGB(100, 70, 255) Parent = MainFrame
+
+local TitleBar = Instance.new("Frame")
+TitleBar.Size = UDim2.new(1, 0, 0, 40)
+TitleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 45)
+TitleBar.BorderSizePixel = 0
+TitleBar.Parent = MainFrame
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 10) Parent = TitleBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -50, 1, 0)
+Title.Position = UDim2.new(0, 15, 0, 0)
+Title.BackgroundTransparency = 1
+Title.Text = "FAST ATTACK BF"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.Parent = TitleBar
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 28, 0, 28)
+CloseBtn.Position = UDim2.new(1, -36, 0.5, -14)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 70, 70)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 16
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = TitleBar
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 6) Parent = CloseBtn
+
+CloseBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = false
+end)
+
+ToggleUIBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+local dragging, dragStart, frameStart
+
+TitleBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        frameStart = MainFrame.Position
+        input.Changed:Wait()
     end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(frameStart.X.Scale, frameStart.X.Offset + delta.X, frameStart.Y.Scale, frameStart.Y.Offset + delta.Y)
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+end)
+
+_G.FastAttackAll = false
+
+local AutoFarmBtn = Instance.new("TextButton")
+AutoFarmBtn.Size = UDim2.new(1, -30, 0, 44)
+AutoFarmBtn.Position = UDim2.new(0, 15, 0, 58)
+AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
+AutoFarmBtn.Text = "AUTO FARM [OFF]"
+AutoFarmBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+AutoFarmBtn.TextSize = 14
+AutoFarmBtn.Font = Enum.Font.GothamSemibold
+AutoFarmBtn.Parent = MainFrame
+
+Instance.new("UICorner").CornerRadius = UDim.new(0, 8) Parent = AutoFarmBtn
+
+AutoFarmBtn.MouseButton1Click:Connect(function()
+    _G.FastAttackAll = not _G.FastAttackAll
     
-    local function StartNoFall()
-        if NoFallConnection then
-            NoFallConnection:Disconnect()
-        end
-        
-        workspace.Gravity = 0
-        
-        local Char = LocalPlayer.Character
-        if Char then
-            local Humanoid = Char:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.WalkSpeed = 0
-                Humanoid.JumpPower = 0
-                Humanoid.PlatformStand = true
-            end
-            for _, Part in ipairs(Char:GetDescendants()) do
-                if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
-                    Part.CanCollide = false
+    if _G.FastAttackAll then
+        AutoFarmBtn.Text = "AUTO FARM [ON]"
+        AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(0, 180, 100)
+        task.spawn(function()
+            local ReplicatedStorage = game:GetService("ReplicatedStorage")
+            local Players = game:GetService("Players")
+            local VirtualInputManager = game:GetService("VirtualInputManager")
+            local TweenService = game:GetService("TweenService")
+            local RunService = game:GetService("RunService")
+            local LocalPlayer = Players.LocalPlayer
+            local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
+            
+            local IsClicking = false
+            local CurrentTarget = nil
+            local TweenConnection = nil
+            local NoFallConnection = nil
+            local OriginalGravity = workspace.Gravity
+            
+            local function ForceReset()
+                IsClicking = false
+                CurrentTarget = nil
+                
+                if TweenConnection then
+                    TweenConnection:Cancel()
+                    TweenConnection = nil
+                end
+                
+                if NoFallConnection then
+                    NoFallConnection:Disconnect()
+                    NoFallConnection = nil
+                end
+                
+                workspace.Gravity = OriginalGravity
+                
+                local Char = LocalPlayer.Character
+                if Char then
+                    local Humanoid = Char:FindFirstChildOfClass("Humanoid")
+                    if Humanoid then
+                        Humanoid.WalkSpeed = 16
+                        Humanoid.JumpPower = 50
+                        Humanoid.PlatformStand = false
+                        Humanoid.AutoRotate = true
+                    end
+                    local Root = Char:FindFirstChild("HumanoidRootPart")
+                    if Root then
+                        Root.Velocity = Vector3.new(0, 0, 0)
+                        Root.RotVelocity = Vector3.new(0, 0, 0)
+                    end
+                    for _, Part in ipairs(Char:GetDescendants()) do
+                        if Part:IsA("BasePart") then
+                            Part.CanCollide = true
+                        end
+                    end
                 end
             end
-        end
-        
-        NoFallConnection = RunService.Heartbeat:Connect(function()
-            local Char = LocalPlayer.Character
-            if Char then
+            
+            local function StartNoFall()
+                if NoFallConnection then
+                    NoFallConnection:Disconnect()
+                end
+                
+                workspace.Gravity = 0
+                
+                local Char = LocalPlayer.Character
+                if Char then
+                    local Humanoid = Char:FindFirstChildOfClass("Humanoid")
+                    if Humanoid then
+                        Humanoid.WalkSpeed = 0
+                        Humanoid.JumpPower = 0
+                        Humanoid.PlatformStand = true
+                    end
+                    for _, Part in ipairs(Char:GetDescendants()) do
+                        if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
+                            Part.CanCollide = false
+                        end
+                    end
+                end
+                
+                NoFallConnection = RunService.Heartbeat:Connect(function()
+                    local Char = LocalPlayer.Character
+                    if Char then
+                        local Root = Char:FindFirstChild("HumanoidRootPart")
+                        if Root then
+                            Root.Velocity = Vector3.new(0, 0, 0)
+                            Root.RotVelocity = Vector3.new(0, 0, 0)
+                        end
+                    end
+                end)
+            end
+            
+            local function TweenToEnemy(Enemy)
+                if TweenConnection then
+                    TweenConnection:Cancel()
+                end
+                
+                local Char = LocalPlayer.Character
+                if not Char then return end
+                
                 local Root = Char:FindFirstChild("HumanoidRootPart")
-                if Root then
-                    Root.Velocity = Vector3.new(0, 0, 0)
-                    Root.RotVelocity = Vector3.new(0, 0, 0)
+                if not Root then return end
+                
+                local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
+                if not EnemyRoot then return end
+                
+                StartNoFall()
+                
+                local TargetPos = EnemyRoot.Position + Vector3.new(0, 10, 0)
+                local Distance = (Root.Position - TargetPos).Magnitude
+                local Speed = math.clamp(Distance / 100, 0.2, 0.8)
+                
+                local Tween = TweenService:Create(Root, TweenInfo.new(Speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(TargetPos)})
+                Tween:Play()
+                TweenConnection = Tween
+            end
+            
+            task.spawn(function()
+                while _G.FastAttackAll do
+                    if IsClicking then
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                        task.wait()
+                        VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                        task.wait()
+                    else
+                        task.wait(0.05)
+                    end
                 end
+            end)
+            
+            while _G.FastAttackAll do
+                local Character = LocalPlayer.Character
+                if not Character then
+                    ForceReset()
+                    task.wait(0.5)
+                    continue
+                end
+                
+                local Root = Character:FindFirstChild("HumanoidRootPart")
+                if not Root then
+                    ForceReset()
+                    task.wait(0.5)
+                    continue
+                end
+                
+                local Humanoid = Character:FindFirstChildOfClass("Humanoid")
+                if not Humanoid or Humanoid.Health <= 0 then
+                    ForceReset()
+                    task.wait(0.5)
+                    continue
+                end
+                
+                local Enemies = workspace:FindFirstChild("Enemies")
+                if not Enemies then
+                    ForceReset()
+                    task.wait(0.5)
+                    continue
+                end
+                
+                local HasEnemyNearby = false
+                local ClosestEnemy = nil
+                local ClosestDistance = math.huge
+                
+                for _, Enemy in ipairs(Enemies:GetChildren()) do
+                    if not _G.FastAttackAll then break end
+                    if not Enemy:IsA("Model") then continue end
+                    
+                    local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
+                    local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
+                    if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot then continue end
+                    
+                    local Distance = (Root.Position - EnemyRoot.Position).Magnitude
+                    if Distance <= 150 then
+                        HasEnemyNearby = true
+                        if Distance < ClosestDistance then
+                            ClosestDistance = Distance
+                            ClosestEnemy = Enemy
+                        end
+                    end
+                end
+                
+                if HasEnemyNearby and ClosestEnemy then
+                    IsClicking = true
+                    
+                    if CurrentTarget ~= ClosestEnemy then
+                        CurrentTarget = ClosestEnemy
+                        TweenToEnemy(ClosestEnemy)
+                    end
+                    
+                    local EnemyRoot = ClosestEnemy:FindFirstChild("HumanoidRootPart")
+                    if EnemyRoot then
+                        Root.CFrame = EnemyRoot.CFrame * CFrame.new(0, 10, 0)
+                        Root.Velocity = Vector3.new(0, 0, 0)
+                    end
+                    
+                    for _, Enemy in ipairs(Enemies:GetChildren()) do
+                        if not _G.FastAttackAll then break end
+                        if not Enemy:IsA("Model") then continue end
+                        
+                        local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
+                        local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
+                        if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
+                        
+                        local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
+                        if Distance > 20 then continue end
+                        
+                        local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
+                        
+                        local args = {
+                            [1] = TargetPart,
+                            [2] = {},
+                            [4] = "079baa9c"
+                        }
+                        
+                        AttackRemote:FireServer(unpack(args))
+                    end
+                else
+                    ForceReset()
+                end
+                
+                task.wait()
             end
         end)
-    end
-    
-    local function TweenToEnemy(Enemy)
-        if TweenConnection then
-            TweenConnection:Cancel()
-        end
-        
-        local Char = LocalPlayer.Character
-        if not Char then return end
-        
-        local Root = Char:FindFirstChild("HumanoidRootPart")
-        if not Root then return end
-        
-        local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
-        if not EnemyRoot then return end
-        
-        StartNoFall()
-        
-        local TargetPos = EnemyRoot.Position + Vector3.new(0, 10, 0)
-        local Distance = (Root.Position - TargetPos).Magnitude
-        local Speed = math.clamp(Distance / 100, 0.2, 0.8)
-        
-        local Tween = TweenService:Create(Root, TweenInfo.new(Speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(TargetPos)})
-        Tween:Play()
-        TweenConnection = Tween
-    end
-    
-    task.spawn(function()
-        while _G.FastAttackAll do
-            if IsClicking then
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                task.wait()
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                task.wait()
-            else
-                task.wait(0.05)
-            end
-        end
-    end)
-    
-    while _G.FastAttackAll do
-        local Character = LocalPlayer.Character
-        if not Character then
-            ForceReset()
-            task.wait(0.5)
-            continue
-        end
-        
-        local Root = Character:FindFirstChild("HumanoidRootPart")
-        if not Root then
-            ForceReset()
-            task.wait(0.5)
-            continue
-        end
-        
-        local Humanoid = Character:FindFirstChildOfClass("Humanoid")
-        if not Humanoid or Humanoid.Health <= 0 then
-            ForceReset()
-            task.wait(0.5)
-            continue
-        end
-        
-        local Enemies = workspace:FindFirstChild("Enemies")
-        if not Enemies then
-            ForceReset()
-            task.wait(0.5)
-            continue
-        end
-        
-        local HasEnemyNearby = false
-        local ClosestEnemy = nil
-        local ClosestDistance = math.huge
-        
-        for _, Enemy in ipairs(Enemies:GetChildren()) do
-            if not _G.FastAttackAll then break end
-            if not Enemy:IsA("Model") then continue end
-            
-            local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
-            local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
-            if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot then continue end
-            
-            local Distance = (Root.Position - EnemyRoot.Position).Magnitude
-            if Distance <= 150 then
-                HasEnemyNearby = true
-                if Distance < ClosestDistance then
-                    ClosestDistance = Distance
-                    ClosestEnemy = Enemy
-                end
-            end
-        end
-        
-        if HasEnemyNearby and ClosestEnemy then
-            IsClicking = true
-            
-            if CurrentTarget ~= ClosestEnemy then
-                CurrentTarget = ClosestEnemy
-                TweenToEnemy(ClosestEnemy)
-            end
-            
-            local EnemyRoot = ClosestEnemy:FindFirstChild("HumanoidRootPart")
-            if EnemyRoot then
-                Root.CFrame = EnemyRoot.CFrame * CFrame.new(0, 10, 0)
-                Root.Velocity = Vector3.new(0, 0, 0)
-            end
-            
-            for _, Enemy in ipairs(Enemies:GetChildren()) do
-                if not _G.FastAttackAll then break end
-                if not Enemy:IsA("Model") then continue end
-                
-                local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
-                local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
-                if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
-                
-                local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
-                if Distance > 20 then continue end
-                
-                local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
-                
-                local args = {
-                    [1] = TargetPart,
-                    [2] = {},
-                    [4] = "079baa9c"
-                }
-                
-                AttackRemote:FireServer(unpack(args))
-            end
-        else
-            ForceReset()
-        end
-        
-        task.wait()
+    else
+        AutoFarmBtn.Text = "AUTO FARM [OFF]"
+        AutoFarmBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 55)
     end
 end) 
