@@ -15,28 +15,35 @@ task.spawn(function()
     local NoFallConnection = nil
     local OriginalGravity = workspace.Gravity
     
-    local function GetLocalPlayer()
-        return Players.LocalPlayer
-    end
-    
-    local function GetCharacter()
-        local Player = GetLocalPlayer()
-        return Player and Player.Character
-    end
-    
-    local function StopNoFall()
+    local function ForceReset()
+        IsClicking = false
+        CurrentTarget = nil
+        
+        if TweenConnection then
+            TweenConnection:Cancel()
+            TweenConnection = nil
+        end
+        
         if NoFallConnection then
             NoFallConnection:Disconnect()
             NoFallConnection = nil
         end
+        
         workspace.Gravity = OriginalGravity
-        local Char = GetCharacter()
+        
+        local Char = LocalPlayer.Character
         if Char then
             local Humanoid = Char:FindFirstChildOfClass("Humanoid")
             if Humanoid then
-                Humanoid.JumpPower = 50
                 Humanoid.WalkSpeed = 16
+                Humanoid.JumpPower = 50
                 Humanoid.PlatformStand = false
+                Humanoid.AutoRotate = true
+            end
+            local Root = Char:FindFirstChild("HumanoidRootPart")
+            if Root then
+                Root.Velocity = Vector3.new(0, 0, 0)
+                Root.RotVelocity = Vector3.new(0, 0, 0)
             end
             for _, Part in ipairs(Char:GetDescendants()) do
                 if Part:IsA("BasePart") then
@@ -47,14 +54,18 @@ task.spawn(function()
     end
     
     local function StartNoFall()
-        StopNoFall()
+        if NoFallConnection then
+            NoFallConnection:Disconnect()
+        end
+        
         workspace.Gravity = 0
-        local Char = GetCharacter()
+        
+        local Char = LocalPlayer.Character
         if Char then
             local Humanoid = Char:FindFirstChildOfClass("Humanoid")
             if Humanoid then
-                Humanoid.JumpPower = 0
                 Humanoid.WalkSpeed = 0
+                Humanoid.JumpPower = 0
                 Humanoid.PlatformStand = true
             end
             for _, Part in ipairs(Char:GetDescendants()) do
@@ -63,8 +74,9 @@ task.spawn(function()
                 end
             end
         end
+        
         NoFallConnection = RunService.Heartbeat:Connect(function()
-            local Char = GetCharacter()
+            local Char = LocalPlayer.Character
             if Char then
                 local Root = Char:FindFirstChild("HumanoidRootPart")
                 if Root then
@@ -76,11 +88,16 @@ task.spawn(function()
     end
     
     local function TweenToEnemy(Enemy)
-        if TweenConnection then TweenConnection:Disconnect() end
-        local Char = GetCharacter()
+        if TweenConnection then
+            TweenConnection:Cancel()
+        end
+        
+        local Char = LocalPlayer.Character
         if not Char then return end
+        
         local Root = Char:FindFirstChild("HumanoidRootPart")
         if not Root then return end
+        
         local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
         if not EnemyRoot then return end
         
@@ -93,30 +110,6 @@ task.spawn(function()
         local Tween = TweenService:Create(Root, TweenInfo.new(Speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(TargetPos)})
         Tween:Play()
         TweenConnection = Tween
-    end
-    
-    local function CleanupAndReset()
-        IsClicking = false
-        CurrentTarget = nil
-        StopNoFall()
-        if TweenConnection then
-            TweenConnection:Cancel()
-            TweenConnection = nil
-        end
-        local Char = GetCharacter()
-        if Char then
-            local Humanoid = Char:FindFirstChildOfClass("Humanoid")
-            if Humanoid then
-                Humanoid.WalkSpeed = 16
-                Humanoid.JumpPower = 50
-                Humanoid.PlatformStand = false
-            end
-            for _, Part in ipairs(Char:GetDescendants()) do
-                if Part:IsA("BasePart") then
-                    Part.CanCollide = true
-                end
-            end
-        end
     end
     
     task.spawn(function()
@@ -133,37 +126,30 @@ task.spawn(function()
     end)
     
     while _G.FastAttackAll do
-        local Player = GetLocalPlayer()
-        if not Player then
-            CleanupAndReset()
-            task.wait(0.5)
-            continue
-        end
-        
-        local Character = Player.Character
+        local Character = LocalPlayer.Character
         if not Character then
-            CleanupAndReset()
+            ForceReset()
             task.wait(0.5)
             continue
         end
         
         local Root = Character:FindFirstChild("HumanoidRootPart")
         if not Root then
-            CleanupAndReset()
+            ForceReset()
             task.wait(0.5)
             continue
         end
         
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if not Humanoid or Humanoid.Health <= 0 then
-            CleanupAndReset()
+            ForceReset()
             task.wait(0.5)
             continue
         end
         
         local Enemies = workspace:FindFirstChild("Enemies")
         if not Enemies then
-            CleanupAndReset()
+            ForceReset()
             task.wait(0.5)
             continue
         end
@@ -175,6 +161,7 @@ task.spawn(function()
         for _, Enemy in ipairs(Enemies:GetChildren()) do
             if not _G.FastAttackAll then break end
             if not Enemy:IsA("Model") then continue end
+            
             local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
             local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
             if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot then continue end
@@ -206,6 +193,7 @@ task.spawn(function()
             for _, Enemy in ipairs(Enemies:GetChildren()) do
                 if not _G.FastAttackAll then break end
                 if not Enemy:IsA("Model") then continue end
+                
                 local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
                 local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
                 if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
@@ -213,18 +201,7 @@ task.spawn(function()
                 local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
                 if Distance > 20 then continue end
                 
-                local BodyParts = {"LeftFoot", "RightFoot", "LeftLeg", "RightLeg", "LeftArm", "RightArm", "Head", "HumanoidRootPart"}
-                local TargetPart = nil
-                
-                for _, PartName in ipairs(BodyParts) do
-                    local Part = Enemy:FindFirstChild(PartName)
-                    if Part then
-                        TargetPart = Part
-                        break
-                    end
-                end
-                
-                if not TargetPart then TargetPart = EnemyRoot2 end
+                local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
                 
                 local args = {
                     [1] = TargetPart,
@@ -235,7 +212,7 @@ task.spawn(function()
                 AttackRemote:FireServer(unpack(args))
             end
         else
-            CleanupAndReset()
+            ForceReset()
         end
         
         task.wait()
