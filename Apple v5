@@ -1,56 +1,56 @@
-_G.AutoFarm = true
+_G.FastAttackAll = true -- Bật/Tắt Fast Attack & Bring
+_G.BringDistance = 50   -- Khoảng cách quét quái
 
-local Players = game:GetService("Players")
-local Plr = Players.LocalPlayer
-local RS = game:GetService("ReplicatedStorage")
-local RegisterHit = RS.Modules.Net:FindFirstChild("RE/RegisterHit")
-
--- Hàm này giúp sếp gom tối đa 4 quái bất kể là đảo nào
-local function BringMob()
-    local myRoot = Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart")
-    if not myRoot then return end
-    
-    local count = 0
-    for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
-        -- Chỉ gom quái còn sống và trong bán kính 300m
-        if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-            local distance = (v.HumanoidRootPart.Position - myRoot.Position).Magnitude
-            if distance < 300 then
-                count = count + 1
-                -- Kéo quái về sát mặt sếp để đánh cho chuẩn
-                v.HumanoidRootPart.CFrame = myRoot.CFrame * CFrame.new(0, 0, -5)
-                v.HumanoidRootPart.CanCollide = false -- Tắt va chạm để quái không đẩy sếp
-                
-                if count >= 4 then break end -- Gom đủ 4 con thì nghỉ, lượt sau gom tiếp
-            end
-        end
-    end
-end
-
--- Vòng lặp Fast Attack tự quét quái trong tầm đánh
 task.spawn(function()
-    while _G.AutoFarm do
-        pcall(function()
-            -- 1. Gọi gom quái về trước
-            BringMob()
-            
-            -- 2. Quét quái trong phạm vi gần để tung đòn RegisterHit
-            for i, v in pairs(game.Workspace.Enemies:GetChildren()) do
-                if v:FindFirstChild("Humanoid") and v.Humanoid.Health > 0 and v:FindFirstChild("HumanoidRootPart") then
-                    local dist = (v.HumanoidRootPart.Position - Plr.Character.HumanoidRootPart.Position).Magnitude
+    while _G.FastAttackAll do
+        local player = game.Players.LocalPlayer
+        local character = player.Character
+        if not character or not character:FindFirstChild("HumanoidRootPart") then 
+            task.wait(1) 
+            continue 
+        end
+        
+        local playerPart = character.HumanoidRootPart
+        -- Lấy vị trí trước mặt người chơi 5 mét để gom quái vào đó
+        local bringPos = playerPart.Position + (playerPart.CFrame.LookVector * 5)
+
+        -[span_1](start_span)- 1. Quét toàn bộ quái trong folder Enemies[span_1](end_span)
+        -- Lưu ý: Kiểm tra tên folder chính xác là "Enemies" hay "enemies" trong workspace của bạn
+        local enemyFolder = workspace:FindFirstChild("Enemies") or workspace:FindFirstChild("enemies")
+        
+        if enemyFolder then
+            for _, v in pairs(enemyFolder:GetChildren()) do
+                -[span_2](start_span)- Kiểm tra: Phải là Model, có máu, và còn sống[span_2](end_span)
+                local humanoid = v:FindFirstChildOfClass("Humanoid")
+                local rootPart = v:FindFirstChild("HumanoidRootPart")
+                
+                if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
+                    -[span_3](start_span)- 2. Kiểm tra khoảng cách (Chỉ xử lý quái trong tầm quét)[span_3](end_span)
+                    local magnitude = (playerPart.Position - rootPart.Position).Magnitude
                     
-                    -- Chỉ đánh nếu quái đã ở gần (dưới 15 mét)
-                    if dist < 15 then
+                    if magnitude < _G.BringDistance then 
+                        -- --- BRING NÂNG CAO ---
+                        -- Gom quái về điểm trước mặt để đánh lan hiệu quả nhất
+                        rootPart.CFrame = CFrame.new(bringPos)
+                        rootPart.CanCollide = false -- Tránh quái đẩy mình đi
+                        
+                        -[span_4](start_span)- 3. Gửi Logic Attack (Sử dụng mã Key bạn đã soi được)[span_4](end_span)
                         local args = {
-                            [1] = v:FindFirstChild("LeftFoot") or v.HumanoidRootPart, -- Tự chọn chân trái hoặc người để đánh
+                            [span_5](start_span)[1] = v:FindFirstChild("RightUpperLeg") or rootPart, -- Ưu tiên đánh chân[span_5](end_span)
                             [2] = {},
-                            [4] = "079baa9c" -- Key bảo mật sếp soi được
+                            [span_6](start_span)[4] = "079004b0" -- Mã Key xác thực của game[span_6](end_span)
                         }
-                        RegisterHit:FireServer(unpack(args))
+                        
+                        local remote = game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit")
+                        if remote then
+                            [span_7](start_span)remote:FireServer(unpack(args))[span_7](end_span)
+                        end
                     end
                 end
             end
-        end)
-        task.wait(0.1) -- Tốc độ đấm, sếp có thể chỉnh 0.05 nếu muốn nhanh hơn nữa
+        end
+        
+        -[span_8](start_span)- 4. Tốc độ vung đòn (0.05 là cực nhanh, 0.1 là an toàn)[span_8](end_span)
+        task.wait(0.05) 
     end
 end)
