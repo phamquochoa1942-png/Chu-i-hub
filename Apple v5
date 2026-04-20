@@ -3,8 +3,18 @@ _G.FastAttackAll = true
 task.spawn(function()
     local ReplicatedStorage = game:GetService("ReplicatedStorage")
     local Players = game:GetService("Players")
+    local VirtualInputManager = game:GetService("VirtualInputManager")
     local LocalPlayer = Players.LocalPlayer
     local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
+    
+    task.spawn(function()
+        while _G.FastAttackAll do
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+            task.wait(0.05)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            task.wait(0.05)
+        end
+    end)
     
     while _G.FastAttackAll do
         local Character = LocalPlayer.Character
