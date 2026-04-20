@@ -8,14 +8,23 @@ task.spawn(function()
     local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
     
     local IsClicking = false
+    local HitCount = 0
+    local MaxHitsPerSecond = 25
+    
+    task.spawn(function()
+        while _G.FastAttackAll do
+            HitCount = 0
+            task.wait(1)
+        end
+    end)
     
     task.spawn(function()
         while _G.FastAttackAll do
             if IsClicking then
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                task.wait(0.05)
+                task.wait(0.01)
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-                task.wait(0.05)
+                task.wait(0.01)
             else
                 task.wait(0.1)
             end
@@ -48,6 +57,7 @@ task.spawn(function()
         
         for _, Enemy in ipairs(Enemies:GetChildren()) do
             if not _G.FastAttackAll then break end
+            if HitCount >= MaxHitsPerSecond then break end
             if not Enemy:IsA("Model") then continue end
             
             local Humanoid = Enemy:FindFirstChildOfClass("Humanoid")
@@ -68,10 +78,11 @@ task.spawn(function()
             }
             
             AttackRemote:FireServer(unpack(args))
+            HitCount = HitCount + 1
         end
         
         IsClicking = HasEnemyNearby
         
-        task.wait(0.05)
+        task.wait(0.01)
     end
 end)
