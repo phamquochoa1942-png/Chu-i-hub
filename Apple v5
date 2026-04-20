@@ -1,57 +1,43 @@
-_G.FastAttackAll = true -- bật tắt fast attack
+_G.FastAttackAll = true
 
 task.spawn(function()
-  while _G.FastAttackAll do
-    -- quét toàn bộ quái trong folder enemies
-    for _, v in pairs(workspace.enemies:Children())
-    do
-      -- kiểm tra phải là model có máu có và còn sống
-     local humanoid = v:FindFirstChildOfClass("humanoid")
-     local rootPart = v:FindFirstChild("HumanrootPart")
-     
-       if v:lsA("model")
-     and humanoid and 
-     humanoid.Health > 0 and rootPart then
-       -- kiểm tra khoảng cách
-       local player Part = 
-       game.Players.LocalPlayer.Character.HumanoidRootPart
-         local magnitude 
-      = (playerPart.Position - rootPart.Position).magnitude
-      
-      if magnitude < 50 then
-        -- 3 gửi logic
-           _G.FastAttackAll = true -- Bật/Tắt Fast Attack
-
-task.spawn(function()
+    local ReplicatedStorage = game:GetService("ReplicatedStorage")
+    local Players = game:GetService("Players")
+    local LocalPlayer = Players.LocalPlayer
+    local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
+    
     while _G.FastAttackAll do
-        -- 1. Quét toàn bộ quái trong folder Enemies
-        for _, v in pairs(workspace.Enemies:GetChildren()) do
-            -- Kiểm tra: Phải là Model, có máu, và còn sống
-            local humanoid = v:FindFirstChildOfClass("Humanoid")
-            local rootPart = v:FindFirstChild("HumanoidRootPart")
+        local Character = LocalPlayer.Character
+        if not Character then task.wait(0.1) continue end
+        
+        local Root = Character:FindFirstChild("HumanoidRootPart")
+        if not Root then task.wait(0.1) continue end
+        
+        local Enemies = workspace:FindFirstChild("Enemies")
+        if not Enemies then task.wait(0.1) continue end
+        
+        for _, Enemy in ipairs(Enemies:GetChildren()) do
+            if not _G.FastAttackAll then break end
+            if not Enemy:IsA("Model") then continue end
             
-            if v:IsA("Model") and humanoid and humanoid.Health > 0 and rootPart then
-                -- 2. Kiểm tra khoảng cách (Chỉ đánh quái trong tầm 50 mét)
-                local playerPart = game.Players.LocalPlayer.Character.HumanoidRootPart
-                local magnitude = (playerPart.Position - rootPart.Position).Magnitude
-                
-                if magnitude < 50 then 
-                    -- 3. Gửi Logic Attack (Sử dụng code ông đã soi được)
-                    local args = {
-                        [1] = v:FindFirstChild("RightUpperLeg") or rootPart, -- Ưu tiên đánh vào chân ko có thì đánh vào thân
-                        [2] = {},
-                        [4] = "079004b0" 
-                    }
-                    
-                    game:GetService("ReplicatedStorage").Modules.Net:FindFirstChild("RE/RegisterHit"):FireServer(unpack(args))
-                end
-            end
+            local Humanoid = Enemy:FindFirstChildOfClass("Humanoid")
+            local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
+            if not Humanoid or Humanoid.Health <= 0 or not EnemyRoot then continue end
+            
+            local Distance = (Root.Position - EnemyRoot.Position).Magnitude
+            if Distance > 50 then continue end
+            
+            local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot
+            
+            local args = {
+                [1] = TargetPart,
+                [2] = {},
+                [4] = "079baa9c"
+            }
+            
+            AttackRemote:FireServer(unpack(args))
         end
         
-        -- 4. Tốc độ vung đòn (0.05 là cực nhanh, 0.1 là an toàn)
-        task.wait(0.05) 
+        task.wait(0.05)
     end
 end)
-
-           
-        
