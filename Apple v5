@@ -7,24 +7,44 @@ task.spawn(function()
     local LocalPlayer = Players.LocalPlayer
     local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterHit")
     
+    local IsClicking = false
+    
     task.spawn(function()
         while _G.FastAttackAll do
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            task.wait(0.05)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-            task.wait(0.05)
+            if IsClicking then
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                task.wait(0.05)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                task.wait(0.05)
+            else
+                task.wait(0.1)
+            end
         end
     end)
     
     while _G.FastAttackAll do
         local Character = LocalPlayer.Character
-        if not Character then task.wait(0.1) continue end
+        if not Character then 
+            IsClicking = false
+            task.wait(0.1) 
+            continue 
+        end
         
         local Root = Character:FindFirstChild("HumanoidRootPart")
-        if not Root then task.wait(0.1) continue end
+        if not Root then 
+            IsClicking = false
+            task.wait(0.1) 
+            continue 
+        end
         
         local Enemies = workspace:FindFirstChild("Enemies")
-        if not Enemies then task.wait(0.1) continue end
+        if not Enemies then 
+            IsClicking = false
+            task.wait(0.1) 
+            continue 
+        end
+        
+        local HasEnemyNearby = false
         
         for _, Enemy in ipairs(Enemies:GetChildren()) do
             if not _G.FastAttackAll then break end
@@ -37,6 +57,8 @@ task.spawn(function()
             local Distance = (Root.Position - EnemyRoot.Position).Magnitude
             if Distance > 50 then continue end
             
+            HasEnemyNearby = true
+            
             local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot
             
             local args = {
@@ -47,6 +69,8 @@ task.spawn(function()
             
             AttackRemote:FireServer(unpack(args))
         end
+        
+        IsClicking = HasEnemyNearby
         
         task.wait(0.05)
     end
