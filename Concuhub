@@ -14,10 +14,14 @@ task.spawn(function()
     local TweenConnection = nil
     local NoFallConnection = nil
     local OriginalGravity = workspace.Gravity
+    local IsActive = false
+    local OriginalWalkSpeed = 16
+    local OriginalJumpPower = 50
     
     local function ForceReset()
         IsClicking = false
         CurrentTarget = nil
+        IsActive = false
         
         if TweenConnection then
             TweenConnection:Cancel()
@@ -35,8 +39,8 @@ task.spawn(function()
         if Char then
             local Humanoid = Char:FindFirstChildOfClass("Humanoid")
             if Humanoid then
-                Humanoid.WalkSpeed = 16
-                Humanoid.JumpPower = 50
+                Humanoid.WalkSpeed = OriginalWalkSpeed
+                Humanoid.JumpPower = OriginalJumpPower
                 Humanoid.PlatformStand = false
                 Humanoid.AutoRotate = true
             end
@@ -64,9 +68,12 @@ task.spawn(function()
         if Char then
             local Humanoid = Char:FindFirstChildOfClass("Humanoid")
             if Humanoid then
+                OriginalWalkSpeed = Humanoid.WalkSpeed
+                OriginalJumpPower = Humanoid.JumpPower
                 Humanoid.WalkSpeed = 0
                 Humanoid.JumpPower = 0
                 Humanoid.PlatformStand = true
+                Humanoid.AutoRotate = false
             end
             for _, Part in ipairs(Char:GetDescendants()) do
                 if Part:IsA("BasePart") and Part.Name ~= "HumanoidRootPart" then
@@ -76,10 +83,13 @@ task.spawn(function()
         end
         
         NoFallConnection = RunService.Heartbeat:Connect(function()
+            if not IsActive then return end
             local Char = LocalPlayer.Character
-            if Char then
+            if Char and CurrentTarget then
                 local Root = Char:FindFirstChild("HumanoidRootPart")
-                if Root then
+                local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                if Root and EnemyRoot then
+                    Root.CFrame = EnemyRoot.CFrame * CFrame.new(0, 15, 0)
                     Root.Velocity = Vector3.new(0, 0, 0)
                     Root.RotVelocity = Vector3.new(0, 0, 0)
                 end
@@ -103,60 +113,53 @@ task.spawn(function()
         
         StartNoFall()
         
-        local TargetPos = EnemyRoot.Position + Vector3.new(0, 20, 0)
+        local TargetPos = EnemyRoot.Position + Vector3.new(0, 15, 0)
         local Distance = (Root.Position - TargetPos).Magnitude
-        local Speed = math.clamp(Distance / 250, 0.01, 0.05) -- Tween siêu nhanh: 0.01-0.05s
+        local Speed = math.clamp(Distance / 200, 0.02, 0.1)
         
         local Tween = TweenService:Create(Root, TweenInfo.new(Speed, Enum.EasingStyle.Linear), {CFrame = CFrame.new(TargetPos)})
         Tween:Play()
         TweenConnection = Tween
     end
     
-    -- Click siêu tốc mỗi frame
-    RunService.Heartbeat:Connect(function()
-        if _G.FastAttackAll and IsClicking then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-        end
-    end)
-    
-    -- Loop phụ trợ click thêm
     task.spawn(function()
         while _G.FastAttackAll do
-            if IsClicking then
+            if IsClicking and IsActive then
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
                 VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+                task.wait(0.002)
+            else
+                task.wait(0.05)
             end
-            task.wait(0.001) -- Thêm 1000 clicks/giây
         end
     end)
     
     while _G.FastAttackAll do
         local Character = LocalPlayer.Character
         if not Character then
-            ForceReset()
-            task.wait(0.1)
+            if IsActive then ForceReset() end
+            task.wait(0.2)
             continue
         end
         
         local Root = Character:FindFirstChild("HumanoidRootPart")
         if not Root then
-            ForceReset()
-            task.wait(0.1)
+            if IsActive then ForceReset() end
+            task.wait(0.2)
             continue
         end
         
         local Humanoid = Character:FindFirstChildOfClass("Humanoid")
         if not Humanoid or Humanoid.Health <= 0 then
-            ForceReset()
-            task.wait(0.1)
+            if IsActive then ForceReset() end
+            task.wait(0.2)
             continue
         end
         
         local Enemies = workspace:FindFirstChild("Enemies")
         if not Enemies then
-            ForceReset()
-            task.wait(0.1)
+            if IsActive then ForceReset() end
+            task.wait(0.2)
             continue
         end
         
@@ -174,7 +177,7 @@ task.spawn(function()
             if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot then continue end
             
             local Distance = (Root.Position - EnemyRoot.Position).Magnitude
-            if Distance <= 200 then
+            if Distance <= 150 then
                 HasEnemyNearby = true
                 table.insert(AllNearbyEnemies, Enemy)
                 if Distance < ClosestDistance then
@@ -185,14 +188,24 @@ task.spawn(function()
         end
         
         if HasEnemyNearby and ClosestEnemy then
-            IsClicking = true
-            
-            if CurrentTarget ~= ClosestEnemy then
+            if not IsActive then
+                IsActive = true
+                IsClicking = true
                 CurrentTarget = ClosestEnemy
                 TweenToEnemy(ClosestEnemy)
             end
             
-            -- Đánh tất cả enemy trong phạm vi 50 studs
+            if CurrentTarget then
+                local EnemyHumanoidCheck = CurrentTarget:FindFirstChildOfClass("Humanoid")
+                local EnemyRootCheck = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                if not EnemyHumanoidCheck or EnemyHumanoidCheck.Health <= 0 or not EnemyRootCheck then
+                    if ClosestEnemy ~= CurrentTarget then
+                        CurrentTarget = ClosestEnemy
+                        TweenToEnemy(ClosestEnemy)
+                    end
+                end
+            end
+            
             for _, Enemy in ipairs(AllNearbyEnemies) do
                 if not _G.FastAttackAll then break end
                 
@@ -201,16 +214,22 @@ task.spawn(function()
                 if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
                 
                 local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
-                if Distance > 50 then continue end
+                if Distance > 35 then continue end
                 
                 local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
                 
+                local args = {
+                    [1] = TargetPart,
+                    [2] = {},
+                    [4] = "079baa9c"
+                }
+                
                 pcall(function()
-                    AttackRemote:FireServer(TargetPart, {}, "079baa9c")
+                    AttackRemote:FireServer(unpack(args))
                 end)
             end
         else
-            ForceReset()
+            if IsActive then ForceReset() end
         end
         
         task.wait()
