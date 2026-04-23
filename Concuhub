@@ -129,17 +129,6 @@ task.spawn(function()
         end
     end)
     
-    task.spawn(function()
-        while _G.FastAttackAll do
-            if IsClicking then
-                pcall(function()
-                    AttackRemote:FireServer(0.5)
-                end)
-            end
-            task.wait(0.5)
-        end
-    end)
-    
     while _G.FastAttackAll do
         local Character = LocalPlayer.Character
         if not Character then
@@ -201,10 +190,25 @@ task.spawn(function()
                 TweenToEnemy(ClosestEnemy)
             end
             
-            local EnemyRoot = ClosestEnemy:FindFirstChild("HumanoidRootPart")
-            if EnemyRoot then
-                Root.CFrame = EnemyRoot.CFrame * CFrame.new(0, 10, 0)
-                Root.Velocity = Vector3.new(0, 0, 0)
+            for _, Enemy in ipairs(AllNearbyEnemies) do
+                if not _G.FastAttackAll then break end
+                
+                local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
+                local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
+                if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
+                
+                local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
+                if Distance > 50 then continue end
+                
+                local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
+                
+                local args = {
+                    [1] = 0.5
+                }
+                
+                pcall(function()
+                    AttackRemote:FireServer(unpack(args))
+                end)
             end
         else
             ForceReset()
