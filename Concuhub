@@ -8,6 +8,7 @@ task.spawn(function()
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
     local AttackRemote = ReplicatedStorage.Modules.Net:FindFirstChild("RE/RegisterAttack")
+    local UserInputService = game:GetService("UserInputService")
     
     local IsClicking = false
     local CurrentTarget = nil
@@ -17,6 +18,8 @@ task.spawn(function()
     local IsActive = false
     local OriginalWalkSpeed = 16
     local OriginalJumpPower = 50
+    
+    UserInputService.MouseIconEnabled = false
     
     local function ForceReset()
         IsClicking = false
@@ -55,6 +58,8 @@ task.spawn(function()
                 end
             end
         end
+        
+        UserInputService.MouseIconEnabled = true
     end
     
     local function StartNoFall()
@@ -115,6 +120,7 @@ task.spawn(function()
         if not EnemyRoot then return end
         
         StartNoFall()
+        UserInputService.MouseIconEnabled = false
         
         local TargetPos = EnemyRoot.Position + Vector3.new(0, 10, 0)
         local Distance = (Root.Position - TargetPos).Magnitude
@@ -126,18 +132,19 @@ task.spawn(function()
     end
     
     RunService.Heartbeat:Connect(function()
-        if _G.FastAttackAll and IsActive and CurrentTarget then
-            local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
-            if EnemyRoot then
-                local ScreenPos, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(EnemyRoot.Position)
-                if OnScreen then
-                    VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, true, game, 1)
-                    VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, false, game, 1)
-                end
-                pcall(function()
-                    AttackRemote:FireServer(0.5)
-                end)
+        if _G.FastAttackAll and IsClicking and IsActive then
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+        end
+    end)
+    
+    task.spawn(function()
+        while _G.FastAttackAll do
+            if IsClicking and IsActive then
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
+                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
             end
+            task.wait(0.001)
         end
     end)
     
@@ -173,6 +180,7 @@ task.spawn(function()
         local HasEnemyNearby = false
         local ClosestEnemy = nil
         local ClosestDistance = math.huge
+        local AllNearbyEnemies = {}
         
         for _, Enemy in ipairs(Enemies:GetChildren()) do
             if not _G.FastAttackAll then break end
@@ -185,6 +193,7 @@ task.spawn(function()
             local Distance = (Root.Position - EnemyRoot.Position).Magnitude
             if Distance <= 200 then
                 HasEnemyNearby = true
+                table.insert(AllNearbyEnemies, Enemy)
                 if Distance < ClosestDistance then
                     ClosestDistance = Distance
                     ClosestEnemy = Enemy
@@ -193,6 +202,8 @@ task.spawn(function()
         end
         
         if HasEnemyNearby and ClosestEnemy then
+            IsClicking = true
+            
             if not IsActive then
                 IsActive = true
                 CurrentTarget = ClosestEnemy
@@ -206,6 +217,23 @@ task.spawn(function()
                     CurrentTarget = ClosestEnemy
                     TweenToEnemy(ClosestEnemy)
                 end
+            end
+            
+            for _, Enemy in ipairs(AllNearbyEnemies) do
+                if not _G.FastAttackAll then break end
+                
+                local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
+                local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
+                if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
+                
+                local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
+                if Distance > 150 then continue end
+                
+                local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
+                
+                pcall(function()
+                    AttackRemote:FireServer(TargetPart, {}, "079baa9c")
+                end)
             end
         else
             if IsActive then ForceReset() end
