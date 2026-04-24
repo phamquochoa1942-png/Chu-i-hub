@@ -89,7 +89,7 @@ task.spawn(function()
                 local Root = Char:FindFirstChild("HumanoidRootPart")
                 local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
                 if Root and EnemyRoot then
-                    local TargetCFrame = EnemyRoot.CFrame * CFrame.new(0, 5, 0)
+                    local TargetCFrame = EnemyRoot.CFrame * CFrame.new(0, 10, 0)
                     Root.CFrame = TargetCFrame
                     Root.Velocity = Vector3.new(0, 0, 0)
                     Root.RotVelocity = Vector3.new(0, 0, 0)
@@ -116,7 +116,7 @@ task.spawn(function()
         
         StartNoFall()
         
-        local TargetPos = EnemyRoot.Position + Vector3.new(0, 5, 0)
+        local TargetPos = EnemyRoot.Position + Vector3.new(0, 10, 0)
         local Distance = (Root.Position - TargetPos).Magnitude
         local Speed = math.clamp(Distance / 250, 0.01, 0.05)
         
@@ -125,19 +125,19 @@ task.spawn(function()
         TweenConnection = Tween
     end
     
-    task.spawn(function()
-        while _G.FastAttackAll do
-            if IsActive and CurrentTarget then
-                local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
-                if EnemyRoot then
-                    local ScreenPos, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(EnemyRoot.Position)
-                    if OnScreen then
-                        VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, true, game, 1)
-                        VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, false, game, 1)
-                    end
+    RunService.Heartbeat:Connect(function()
+        if _G.FastAttackAll and IsActive and CurrentTarget then
+            local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
+            if EnemyRoot then
+                local ScreenPos, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(EnemyRoot.Position)
+                if OnScreen then
+                    VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, true, game, 1)
+                    VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, false, game, 1)
                 end
+                pcall(function()
+                    AttackRemote:FireServer(0.5)
+                end)
             end
-            task.wait(0.001)
         end
     end)
     
@@ -173,7 +173,6 @@ task.spawn(function()
         local HasEnemyNearby = false
         local ClosestEnemy = nil
         local ClosestDistance = math.huge
-        local AllNearbyEnemies = {}
         
         for _, Enemy in ipairs(Enemies:GetChildren()) do
             if not _G.FastAttackAll then break end
@@ -186,7 +185,6 @@ task.spawn(function()
             local Distance = (Root.Position - EnemyRoot.Position).Magnitude
             if Distance <= 200 then
                 HasEnemyNearby = true
-                table.insert(AllNearbyEnemies, Enemy)
                 if Distance < ClosestDistance then
                     ClosestDistance = Distance
                     ClosestEnemy = Enemy
@@ -197,7 +195,6 @@ task.spawn(function()
         if HasEnemyNearby and ClosestEnemy then
             if not IsActive then
                 IsActive = true
-                IsClicking = true
                 CurrentTarget = ClosestEnemy
                 TweenToEnemy(ClosestEnemy)
             end
@@ -208,19 +205,6 @@ task.spawn(function()
                 if not EnemyHumanoidCheck or EnemyHumanoidCheck.Health <= 0 or not EnemyRootCheck then
                     CurrentTarget = ClosestEnemy
                     TweenToEnemy(ClosestEnemy)
-                end
-            end
-            
-            if IsActive and CurrentTarget then
-                local EnemyRoot3 = CurrentTarget:FindFirstChild("HumanoidRootPart")
-                if EnemyRoot3 then
-                    local args = {
-                        [1] = 0.5
-                    }
-                    
-                    pcall(function()
-                        AttackRemote:FireServer(unpack(args))
-                    end)
                 end
             end
         else
