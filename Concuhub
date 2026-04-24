@@ -82,16 +82,19 @@ task.spawn(function()
             end
         end
         
-        NoFallConnection = RunService.Heartbeat:Connect(function()
+        NoFallConnection = RunService.RenderStepped:Connect(function()
             if not IsActive then return end
             local Char = LocalPlayer.Character
             if Char and CurrentTarget then
                 local Root = Char:FindFirstChild("HumanoidRootPart")
                 local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
                 if Root and EnemyRoot then
-                    Root.CFrame = EnemyRoot.CFrame * CFrame.new(0, 20, 0)
+                    local TargetCFrame = EnemyRoot.CFrame * CFrame.new(0, 5, 0)
+                    Root.CFrame = TargetCFrame
                     Root.Velocity = Vector3.new(0, 0, 0)
                     Root.RotVelocity = Vector3.new(0, 0, 0)
+                    Root.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    Root.AssemblyAngularVelocity = Vector3.new(0, 0, 0)
                 end
             end
         end)
@@ -113,7 +116,7 @@ task.spawn(function()
         
         StartNoFall()
         
-        local TargetPos = EnemyRoot.Position + Vector3.new(0, 20, 0)
+        local TargetPos = EnemyRoot.Position + Vector3.new(0, 5, 0)
         local Distance = (Root.Position - TargetPos).Magnitude
         local Speed = math.clamp(Distance / 250, 0.01, 0.05)
         
@@ -122,18 +125,17 @@ task.spawn(function()
         TweenConnection = Tween
     end
     
-    RunService.Heartbeat:Connect(function()
-        if _G.FastAttackAll and IsClicking and IsActive then
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-            VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
-        end
-    end)
-    
     task.spawn(function()
         while _G.FastAttackAll do
-            if IsClicking and IsActive then
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
-                VirtualInputManager:SendMouseButtonEvent(0, 0, 0, false, game, 1)
+            if IsActive and CurrentTarget then
+                local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                if EnemyRoot then
+                    local ScreenPos, OnScreen = workspace.CurrentCamera:WorldToViewportPoint(EnemyRoot.Position)
+                    if OnScreen then
+                        VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, true, game, 1)
+                        VirtualInputManager:SendMouseButtonEvent(ScreenPos.X, ScreenPos.Y, 0, false, game, 1)
+                    end
+                end
             end
             task.wait(0.001)
         end
@@ -209,25 +211,17 @@ task.spawn(function()
                 end
             end
             
-            for _, Enemy in ipairs(AllNearbyEnemies) do
-                if not _G.FastAttackAll then break end
-                
-                local EnemyHumanoid = Enemy:FindFirstChildOfClass("Humanoid")
-                local EnemyRoot2 = Enemy:FindFirstChild("HumanoidRootPart")
-                if not EnemyHumanoid or EnemyHumanoid.Health <= 0 or not EnemyRoot2 then continue end
-                
-                local Distance = (Root.Position - EnemyRoot2.Position).Magnitude
-                if Distance > 50 then continue end
-                
-                local TargetPart = Enemy:FindFirstChild("LeftFoot") or Enemy:FindFirstChild("RightFoot") or Enemy:FindFirstChild("Head") or EnemyRoot2
-                
-                local args = {
-                    [1] = 0.5
-                }
-                
-                pcall(function()
-                    AttackRemote:FireServer(unpack(args))
-                end)
+            if IsActive and CurrentTarget then
+                local EnemyRoot3 = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                if EnemyRoot3 then
+                    local args = {
+                        [1] = 0.5
+                    }
+                    
+                    pcall(function()
+                        AttackRemote:FireServer(unpack(args))
+                    end)
+                end
             end
         else
             if IsActive then ForceReset() end
