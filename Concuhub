@@ -47,14 +47,11 @@ task.spawn(function()
     local CurrentTarget = nil
     local TweenConnection = nil
     local NoFallConnection = nil
-    local StickConnection = nil   -- giữ yên trên đầu mob
     local OriginalGravity = workspace.Gravity
-    local IsActive = false        -- true = đang farm, false = nghỉ hoàn toàn
 
     local function ForceReset()
         IsClicking = false
         CurrentTarget = nil
-        IsActive = false
 
         if TweenConnection then
             TweenConnection:Cancel()
@@ -64,12 +61,6 @@ task.spawn(function()
         if NoFallConnection then
             NoFallConnection:Disconnect()
             NoFallConnection = nil
-        end
-
-        -- Tắt logic giữ yên trên đầu mob
-        if StickConnection then
-            StickConnection:Disconnect()
-            StickConnection = nil
         end
 
         workspace.Gravity = OriginalGravity
@@ -101,8 +92,7 @@ task.spawn(function()
             NoFallConnection:Disconnect()
         end
 
-        -- Trọng lực âm → nhân vật tự bay lên trên đầu mob
-        workspace.Gravity = -50
+        workspace.Gravity = 0
 
         local Char = LocalPlayer.Character
         if Char then
@@ -128,40 +118,6 @@ task.spawn(function()
                     Root.RotVelocity = Vector3.new(0, 0, 0)
                 end
             end
-        end)
-    end
-
-    -- Giữ nhân vật đứng yên trên đầu mob mỗi frame
-    local function StickToEnemy(Enemy)
-        if StickConnection then
-            StickConnection:Disconnect()
-            StickConnection = nil
-        end
-
-        StickConnection = RunService.Heartbeat:Connect(function()
-            -- Tắt nếu không còn farm hoặc mob đã chết
-            if not IsActive or not Enemy or not Enemy.Parent then
-                StickConnection:Disconnect()
-                StickConnection = nil
-                return
-            end
-
-            local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
-            local Char = LocalPlayer.Character
-            if not EnemyRoot or not Char then return end
-
-            local Root = Char:FindFirstChild("HumanoidRootPart")
-            if not Root then return end
-
-            local EnemyHum = Enemy:FindFirstChildOfClass("Humanoid")
-            if not EnemyHum or EnemyHum.Health <= 0 then
-                StickConnection:Disconnect()
-                StickConnection = nil
-                return
-            end
-
-            -- Liên tục cập nhật vị trí theo mob nếu mob di chuyển
-            Root.CFrame = CFrame.new(EnemyRoot.Position + Vector3.new(0, 20, 0))
         end)
     end
 
@@ -192,11 +148,6 @@ task.spawn(function()
         )
         Tween:Play()
         TweenConnection = Tween
-
-        -- Sau khi tween xong → bắt đầu giữ yên trên đầu mob
-        Tween.Completed:Connect(function()
-            StickToEnemy(Enemy)
-        end)
     end
 
     -- Click siêu tốc mỗi frame
@@ -288,7 +239,6 @@ task.spawn(function()
         end
 
         if HasEnemyNearby and ClosestEnemy then
-            IsActive = true   -- bật logic
             IsClicking = true
 
             if CurrentTarget ~= ClosestEnemy then
@@ -329,5 +279,4 @@ task.spawn(function()
 
         task.wait()
     end
-end)
- 
+end) 
