@@ -8,6 +8,10 @@ task.spawn(function()
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
 
+    -- =====================================================
+    -- FIX 1: Tìm Remote an toàn, không crash nếu nil
+    -- Thay "RE/RegisterHit" bằng tên đúng nếu không damage
+    -- =====================================================
     local AttackRemote = nil
     local NetFolder = ReplicatedStorage:FindFirstChild("Modules")
         and ReplicatedStorage.Modules:FindFirstChild("Net")
