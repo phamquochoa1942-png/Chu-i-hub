@@ -8,10 +8,6 @@ task.spawn(function()
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
 
-    -- =====================================================
-    -- FIX 1: Tìm Remote an toàn, không crash nếu nil
-    -- Thay "RE/RegisterHit" bằng tên đúng nếu không damage
-    -- =====================================================
     local AttackRemote = nil
     local NetFolder = ReplicatedStorage:FindFirstChild("Modules")
         and ReplicatedStorage.Modules:FindFirstChild("Net")
@@ -19,7 +15,6 @@ task.spawn(function()
         AttackRemote = NetFolder:FindFirstChild("RE/RegisterHit")
     end
     if not AttackRemote then
-        -- Tự tìm remote có chữ "Hit" trong tên
         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
             if v:IsA("RemoteEvent") and v.Name:lower():find("hit") then
                 AttackRemote = v
@@ -30,7 +25,6 @@ task.spawn(function()
     end
     if not AttackRemote then
         warn("[FastAttack] Không tìm thấy Remote! Chạy hook bên dưới để tìm tên đúng.")
-        -- Hook tất cả remote để debug
         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
             if v:IsA("RemoteEvent") then
                 local old = v.FireServer
@@ -40,18 +34,20 @@ task.spawn(function()
                 end
             end
         end
-        -- Vẫn tiếp tục chạy VirtualInput để click
     end
 
     local IsClicking = false
     local CurrentTarget = nil
     local TweenConnection = nil
     local NoFallConnection = nil
+    local StickConnection = nil
     local OriginalGravity = workspace.Gravity
+    local IsActive = false
 
     local function ForceReset()
         IsClicking = false
         CurrentTarget = nil
+        IsActive = false
 
         if TweenConnection then
             TweenConnection:Cancel()
@@ -61,6 +57,11 @@ task.spawn(function()
         if NoFallConnection then
             NoFallConnection:Disconnect()
             NoFallConnection = nil
+        end
+
+        if StickConnection then
+            StickConnection:Disconnect()
+            StickConnection = nil
         end
 
         workspace.Gravity = OriginalGravity
@@ -92,7 +93,8 @@ task.spawn(function()
             NoFallConnection:Disconnect()
         end
 
-        workspace.Gravity = 0
+        -- FIX: Dùng trọng lực 1e5 để giữ không rơi
+        workspace.Gravity = 1e5
 
         local Char = LocalPlayer.Character
         if Char then
@@ -118,6 +120,37 @@ task.spawn(function()
                     Root.RotVelocity = Vector3.new(0, 0, 0)
                 end
             end
+        end)
+    end
+
+    local function StickToEnemy(Enemy)
+        if StickConnection then
+            StickConnection:Disconnect()
+            StickConnection = nil
+        end
+
+        StickConnection = RunService.Heartbeat:Connect(function()
+            if not IsActive or not Enemy or not Enemy.Parent then
+                StickConnection:Disconnect()
+                StickConnection = nil
+                return
+            end
+
+            local EnemyRoot = Enemy:FindFirstChild("HumanoidRootPart")
+            local Char = LocalPlayer.Character
+            if not EnemyRoot or not Char then return end
+
+            local Root = Char:FindFirstChild("HumanoidRootPart")
+            if not Root then return end
+
+            local EnemyHum = Enemy:FindFirstChildOfClass("Humanoid")
+            if not EnemyHum or EnemyHum.Health <= 0 then
+                StickConnection:Disconnect()
+                StickConnection = nil
+                return
+            end
+
+            Root.CFrame = CFrame.new(EnemyRoot.Position + Vector3.new(0, 20, 0))
         end)
     end
 
@@ -148,9 +181,12 @@ task.spawn(function()
         )
         Tween:Play()
         TweenConnection = Tween
+
+        Tween.Completed:Connect(function()
+            StickToEnemy(Enemy)
+        end)
     end
 
-    -- Click siêu tốc mỗi frame
     RunService.Heartbeat:Connect(function()
         if _G.FastAttackAll and IsClicking then
             VirtualInputManager:SendMouseButtonEvent(0, 0, 0, true, game, 1)
@@ -158,7 +194,6 @@ task.spawn(function()
         end
     end)
 
-    -- Loop phụ trợ click thêm
     task.spawn(function()
         while _G.FastAttackAll do
             if IsClicking then
@@ -191,11 +226,9 @@ task.spawn(function()
             continue
         end
 
-        -- FIX 3: Tìm mob ở nhiều folder, không chỉ "Enemies"
         local EnemyFolders = {}
         for _, v in pairs(workspace:GetChildren()) do
             if v:IsA("Folder") or v:IsA("Model") then
-                -- Tìm folder có chứa mob (có Humanoid bên trong)
                 for _, child in pairs(v:GetChildren()) do
                     if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") then
                         table.insert(EnemyFolders, v)
@@ -216,7 +249,6 @@ task.spawn(function()
         local ClosestDistance = math.huge
         local AllNearbyEnemies = {}
 
-        -- FIX 4: Duyệt tất cả folder thay vì chỉ "Enemies"
         for _, Folder in pairs(EnemyFolders) do
             for _, Enemy in pairs(Folder:GetChildren()) do
                 if not _G.FastAttackAll then break end
@@ -239,6 +271,7 @@ task.spawn(function()
         end
 
         if HasEnemyNearby and ClosestEnemy then
+            IsActive = true
             IsClicking = true
 
             if CurrentTarget ~= ClosestEnemy then
@@ -246,7 +279,6 @@ task.spawn(function()
                 TweenToEnemy(ClosestEnemy)
             end
 
-            -- Đánh tất cả enemy trong phạm vi 50 studs
             for _, Enemy in pairs(AllNearbyEnemies) do
                 if not _G.FastAttackAll then break end
 
@@ -262,22 +294,16 @@ task.spawn(function()
                     or Enemy:FindFirstChild("Head")
                     or EnemyRoot2
 
-                -- FIX 5: Thử FireServer với nhiều cách khác nhau
                 if AttackRemote then
                     pcall(function()
-                        -- Thử cách 1: Đầy đủ tham số gốc
                         AttackRemote:FireServer(TargetPart, {}, "079baa9c")
                     end)
-                    -- Nếu cách 1 không damage, thử cách 2 (bỏ hash):
-                    -- AttackRemote:FireServer(TargetPart, {})
-                    -- Nếu vẫn không damage → chạy hook ở trên để tìm tên Remote đúng
                 end
             end
         else
-            ForceReset()
+            ForceReset()  -- TẮT HẾT khi không có quái, MỞ LẠI khi quét được quái
         end
 
         task.wait()
     end
-end)
- 
+end) 
