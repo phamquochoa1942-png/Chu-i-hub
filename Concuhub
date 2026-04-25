@@ -24,16 +24,7 @@ task.spawn(function()
         end
     end
     if not AttackRemote then
-        warn("[FastAttack] Không tìm thấy Remote! Chạy hook bên dưới để tìm tên đúng.")
-        for _, v in pairs(ReplicatedStorage:GetDescendants()) do
-            if v:IsA("RemoteEvent") then
-                local old = v.FireServer
-                v.FireServer = function(self, ...)
-                    print("[HOOK] REMOTE:", v:GetFullName(), "| ARGS:", ...)
-                    old(self, ...)
-                end
-            end
-        end
+        warn("[FastAttack] Không tìm thấy Remote!")
     end
 
     local IsClicking = false
@@ -93,7 +84,7 @@ task.spawn(function()
             NoFallConnection:Disconnect()
         end
 
-        -- FIX: Dùng trọng lực 1e5 để giữ không rơi
+        -- Dùng Gravity 1e5 để giữ im không rơi
         workspace.Gravity = 1e5
 
         local Char = LocalPlayer.Character
@@ -301,7 +292,7 @@ task.spawn(function()
                 end
             end
         else
-            ForceReset()  -- TẮT HẾT khi không có quái, MỞ LẠI khi quét được quái
+            ForceReset()  -- Tắt No Fall khi không có quái, đi lại bình thường
         end
 
         task.wait()
