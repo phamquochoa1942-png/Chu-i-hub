@@ -8,10 +8,6 @@ task.spawn(function()
     local RunService = game:GetService("RunService")
     local LocalPlayer = Players.LocalPlayer
 
-    -- =====================================================
-    -- FIX 1: Tìm Remote an toàn, không crash nếu nil
-    -- Thay "RE/RegisterHit" bằng tên đúng nếu không damage
-    -- =====================================================
     local AttackRemote = nil
     local NetFolder = ReplicatedStorage:FindFirstChild("Modules")
         and ReplicatedStorage.Modules:FindFirstChild("Net")
@@ -19,7 +15,6 @@ task.spawn(function()
         AttackRemote = NetFolder:FindFirstChild("RE/RegisterHit")
     end
     if not AttackRemote then
-        -- Tự tìm remote có chữ "Hit" trong tên
         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
             if v:IsA("RemoteEvent") and v.Name:lower():find("hit") then
                 AttackRemote = v
@@ -29,8 +24,7 @@ task.spawn(function()
         end
     end
     if not AttackRemote then
-        warn("[FastAttack] Không tìm thấy Remote! Chạy hook bên dưới để tìm tên đúng.")
-        -- Hook tất cả remote để debug
+        warn("[FastAttack] Không tìm thấy Remote!")
         for _, v in pairs(ReplicatedStorage:GetDescendants()) do
             if v:IsA("RemoteEvent") then
                 local old = v.FireServer
@@ -40,7 +34,6 @@ task.spawn(function()
                 end
             end
         end
-        -- Vẫn tiếp tục chạy VirtualInput để click
     end
 
     local IsClicking = false
@@ -90,6 +83,7 @@ task.spawn(function()
     local function StartNoFall()
         if NoFallConnection then
             NoFallConnection:Disconnect()
+            NoFallConnection = nil
         end
 
         workspace.Gravity = 0
@@ -109,13 +103,34 @@ task.spawn(function()
             end
         end
 
+        -- FIX TUỘT: Sau khi Tween xong mới bắt đầu NoFall
+        -- Không chạy NoFall song song với Tween vì 2 cái tranh nhau
         NoFallConnection = RunService.Heartbeat:Connect(function()
+            -- Chỉ lock vị trí khi KHÔNG có Tween đang chạy
+            if TweenConnection then return end
+
             local Char = LocalPlayer.Character
             if Char then
                 local Root = Char:FindFirstChild("HumanoidRootPart")
                 if Root then
-                    Root.Velocity = Vector3.new(0, 0, 0)
+                    Root.Velocity    = Vector3.new(0, 0, 0)
                     Root.RotVelocity = Vector3.new(0, 0, 0)
+
+                    -- Ghim thêm CFrame theo mob nếu CurrentTarget còn sống
+                    if CurrentTarget then
+                        local EnemyRoot = CurrentTarget:FindFirstChild("HumanoidRootPart")
+                        local EnemyHum  = CurrentTarget:FindFirstChildOfClass("Humanoid")
+
+                        -- FIX KHÔNG BAY LẠI: Nếu mob chết → reset CurrentTarget
+                        -- → vòng lặp chính sẽ gọi TweenToEnemy với mob mới
+                        if not CurrentTarget.Parent or not EnemyRoot
+                            or not EnemyHum or EnemyHum.Health <= 0 then
+                            CurrentTarget = nil
+                            return
+                        end
+
+                        Root.CFrame = CFrame.new(EnemyRoot.Position + Vector3.new(0, 20, 0))
+                    end
                 end
             end
         end)
@@ -124,6 +139,7 @@ task.spawn(function()
     local function TweenToEnemy(Enemy)
         if TweenConnection then
             TweenConnection:Cancel()
+            TweenConnection = nil
         end
 
         local Char = LocalPlayer.Character
@@ -148,6 +164,12 @@ task.spawn(function()
         )
         Tween:Play()
         TweenConnection = Tween
+
+        -- FIX TUỘT: Khi Tween xong → xóa TweenConnection
+        -- → NoFallConnection mới bắt đầu ghim vị trí
+        Tween.Completed:Connect(function()
+            TweenConnection = nil
+        end)
     end
 
     -- Click siêu tốc mỗi frame
@@ -158,7 +180,6 @@ task.spawn(function()
         end
     end)
 
-    -- Loop phụ trợ click thêm
     task.spawn(function()
         while _G.FastAttackAll do
             if IsClicking then
@@ -191,11 +212,9 @@ task.spawn(function()
             continue
         end
 
-        -- FIX 3: Tìm mob ở nhiều folder, không chỉ "Enemies"
         local EnemyFolders = {}
         for _, v in pairs(workspace:GetChildren()) do
             if v:IsA("Folder") or v:IsA("Model") then
-                -- Tìm folder có chứa mob (có Humanoid bên trong)
                 for _, child in pairs(v:GetChildren()) do
                     if child:IsA("Model") and child:FindFirstChildOfClass("Humanoid") then
                         table.insert(EnemyFolders, v)
@@ -216,7 +235,6 @@ task.spawn(function()
         local ClosestDistance = math.huge
         local AllNearbyEnemies = {}
 
-        -- FIX 4: Duyệt tất cả folder thay vì chỉ "Enemies"
         for _, Folder in pairs(EnemyFolders) do
             for _, Enemy in pairs(Folder:GetChildren()) do
                 if not _G.FastAttackAll then break end
@@ -241,12 +259,13 @@ task.spawn(function()
         if HasEnemyNearby and ClosestEnemy then
             IsClicking = true
 
+            -- CurrentTarget = nil khi mob chết (set bởi NoFallConnection)
+            -- → điều kiện ~= true → TweenToEnemy tự chạy lại với mob mới
             if CurrentTarget ~= ClosestEnemy then
                 CurrentTarget = ClosestEnemy
                 TweenToEnemy(ClosestEnemy)
             end
 
-            -- Đánh tất cả enemy trong phạm vi 50 studs
             for _, Enemy in pairs(AllNearbyEnemies) do
                 if not _G.FastAttackAll then break end
 
@@ -262,15 +281,10 @@ task.spawn(function()
                     or Enemy:FindFirstChild("Head")
                     or EnemyRoot2
 
-                -- FIX 5: Thử FireServer với nhiều cách khác nhau
                 if AttackRemote then
                     pcall(function()
-                        -- Thử cách 1: Đầy đủ tham số gốc
                         AttackRemote:FireServer(TargetPart, {}, "079baa9c")
                     end)
-                    -- Nếu cách 1 không damage, thử cách 2 (bỏ hash):
-                    -- AttackRemote:FireServer(TargetPart, {})
-                    -- Nếu vẫn không damage → chạy hook ở trên để tìm tên Remote đúng
                 end
             end
         else
@@ -279,4 +293,5 @@ task.spawn(function()
 
         task.wait()
     end
-end) 
+end)
+ 
