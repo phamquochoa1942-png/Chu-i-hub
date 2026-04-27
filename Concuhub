@@ -5,6 +5,7 @@ task.spawn(function()
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local VirtualInputManager = game:GetService("VirtualInputManager")
+    local UserInputService = game:GetService("UserInputService")
     local LocalPlayer = Players.LocalPlayer
     
     local AttackRemote = ReplicatedStorage:WaitForChild("Modules"):WaitForChild("Net"):WaitForChild("RE/RegisterHit")
@@ -49,6 +50,8 @@ task.spawn(function()
                 end
             end
         end
+        
+        UserInputService.MouseIconEnabled = true
     end
     
     local function StartNoFall(Target)
@@ -57,6 +60,7 @@ task.spawn(function()
         end
         
         workspace.Gravity = 0
+        UserInputService.MouseIconEnabled = false
         
         local Char = LocalPlayer.Character
         if Char then
