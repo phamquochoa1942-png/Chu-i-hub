@@ -1,11 +1,12 @@
--- M1 Kitsune Fruit — Fast Attack + Aura + Ultra Long Range
+-- M1 Kitsune Fruit — Pure Remote No Delay
 _G.KitsuneM1 = true
 
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local vector_create = Vector3.new
 
-local function FireKitsuneM1(targetPos)
+local function FireKitsuneM1()
     local char = LP.Character
     if not char then return end
     
@@ -15,11 +16,11 @@ local function FireKitsuneM1(targetPos)
     local remote = fruit:FindFirstChild("LeftClickRemote")
     if not remote then return end
     
-    local direction = targetPos or (char:GetPivot().LookVector * 100)
+    local dir = char:GetPivot().LookVector * 300
     
     local args = {
-        vector_create(direction.X, direction.Y, direction.Z),
-        2,
+        vector_create(dir.X, dir.Y, dir.Z),
+        math.random(1, 4),
         true
     }
     
@@ -28,44 +29,11 @@ local function FireKitsuneM1(targetPos)
     end)
 end
 
-local function AuraKitsune(range)
-    local char = LP.Character
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    local enemies = workspace:FindFirstChild("Enemies")
-    if not enemies then return end
-    
-    for _, v in ipairs(enemies:GetChildren()) do
-        if v:IsA("Model") then
-            local hum = v:FindFirstChildOfClass("Humanoid")
-            local er = v:FindFirstChild("HumanoidRootPart")
-            if hum and hum.Health > 0 and er then
-                local dist = (root.Position - er.Position).Magnitude
-                if dist <= (range or 500) then
-                    local dir = (er.Position - root.Position).Unit * 500
-                    task.spawn(function()
-                        FireKitsuneM1(dir)
-                    end)
-                end
-            end
-        end
-    end
-end
-
--- MAIN LOOP — Đánh xa 500 studs
-task.spawn(function()
-    while _G.KitsuneM1 do
-        local char = LP.Character
-        if char then
-            local lookDir = char:GetPivot().LookVector * 500
-            FireKitsuneM1(lookDir)
-            AuraKitsune(500)
-        end
-        
-        task.wait(0.01)
+-- RenderStepped = nhanh nhất có thể, không delay
+RunService.RenderStepped:Connect(function()
+    if _G.KitsuneM1 then
+        FireKitsuneM1()
     end
 end)
 
-print("[Kitsune M1] ON | Range: 500 studs")
+print("[Kitsune M1] ON | No Click | No Delay")
