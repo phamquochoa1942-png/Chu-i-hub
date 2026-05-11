@@ -1,23 +1,20 @@
--- M1 Kitsune Fruit — GOD TIER (Multi Target 8 Mobs/Frame)
+-- M1 Kitsune Fruit — 360° AOE ONLY (Không đánh thẳng)
 _G.KitsuneM1 = true
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local vector_create = Vector3.new
 local math_rad = math.rad
 local math_random = math.random
 
 local RANGE = 1000
-local MAX_MOBS = 8 -- Số quái tối đa đánh mỗi frame
+local MAX_MOBS = 8
 
 local function FireKitsuneM1(direction)
     local char = LP.Character
     if not char then return end
-    
     local fruit = char:FindFirstChild("Kitsune-Kitsune")
     if not fruit then return end
-    
     local remote = fruit:FindFirstChild("LeftClickRemote")
     if not remote then return end
     
@@ -26,74 +23,55 @@ local function FireKitsuneM1(direction)
         math_random(1, 4),
         true
     }
-    
-    pcall(function()
-        remote:FireServer(unpack(args))
-    end)
+    pcall(function() remote:FireServer(unpack(args)) end)
 end
 
 local angle = 0
 
--- =====================================================
--- MAIN LOOP — Đánh 6-8 con cùng lúc + 360° + Aura
--- =====================================================
-RunService.RenderStepped:Connect(function()
-    if not _G.KitsuneM1 then return end
-    
-    local char = LP.Character
-    if not char then return end
-    
-    local root = char:FindFirstChild("HumanoidRootPart")
-    if not root then return end
-    
-    local pivot = char:GetPivot()
-    
-    -- 1. Đánh thẳng về trước
-    FireKitsuneM1(pivot.LookVector * RANGE)
-    
-    -- 2. Đánh 8 hướng 360°
-    for i = 0, 7 do
-        local rad = math_rad(angle + i * 45)
-        local dir = (pivot.LookVector * math.cos(rad) + pivot.RightVector * math.sin(rad)) * RANGE
-        FireKitsuneM1(dir)
-    end
-    angle = (angle + 30) % 360
-    
-    -- 3. AURA: Gom 6-8 quái gần nhất và đánh mỗi con 2 lần
-    local enemies = workspace:FindFirstChild("Enemies")
-    if enemies then
-        local nearbyEnemies = {}
-        for _, v in ipairs(enemies:GetChildren()) do
-            if v:IsA("Model") then
-                local hum = v:FindFirstChildOfClass("Humanoid")
-                local er = v:FindFirstChild("HumanoidRootPart")
-                if hum and hum.Health > 0 and er then
-                    local dist = (root.Position - er.Position).Magnitude
-                    if dist <= RANGE then
-                        nearbyEnemies[#nearbyEnemies + 1] = { er = er, dist = dist }
+-- 100 hits/s — CHỈ ĐÁNH XUNG QUANH + AURA
+task.spawn(function()
+    while _G.KitsuneM1 do
+        local char = LP.Character
+        if char then
+            local root = char:FindFirstChild("HumanoidRootPart")
+            if root then
+                local pivot = char:GetPivot()
+                
+                -- 12 hướng 360° (30° mỗi hướng)
+                for i = 0, 11 do
+                    local rad = math_rad(angle + i * 30)
+                    local dir = (pivot.LookVector * math.cos(rad) + pivot.RightVector * math.sin(rad)) * RANGE
+                    FireKitsuneM1(dir)
+                end
+                angle = (angle + 15) % 360
+                
+                -- Aura đánh từng con
+                local enemies = workspace:FindFirstChild("Enemies")
+                if enemies then
+                    local list = {}
+                    for _, v in ipairs(enemies:GetChildren()) do
+                        if v:IsA("Model") then
+                            local hum = v:FindFirstChildOfClass("Humanoid")
+                            local er = v:FindFirstChild("HumanoidRootPart")
+                            if hum and hum.Health > 0 and er then
+                                local dist = (root.Position - er.Position).Magnitude
+                                if dist <= RANGE then
+                                    list[#list + 1] = er
+                                end
+                            end
+                        end
+                    end
+                    table.sort(list, function(a, b) return (root.Position - a.Position).Magnitude < (root.Position - b.Position).Magnitude end)
+                    for i = 1, math.min(#list, MAX_MOBS) do
+                        local dir = (list[i].Position - root.Position).Unit * RANGE
+                        FireKitsuneM1(dir)
+                        FireKitsuneM1(dir)
                     end
                 end
             end
         end
-        
-        -- Sắp xếp theo khoảng cách (gần nhất trước)
-        table.sort(nearbyEnemies, function(a, b) return a.dist < b.dist end)
-        
-        -- Đánh mỗi con 2 lần
-        local count = 0
-        for _, data in ipairs(nearbyEnemies) do
-            if count >= MAX_MOBS then break end
-            local dir = (data.er.Position - root.Position).Unit * RANGE
-            -- Đánh liên tiếp 2 lần
-            task.spawn(function()
-                FireKitsuneM1(dir)
-            end)
-            task.spawn(function()
-                FireKitsuneM1(dir)
-            end)
-            count += 1
-        end
+        task.wait(0.01)
     end
 end)
 
-print("[Kitsune M1 GOD TIER v2] ON | Range:", RANGE, "| Multi:", MAX_MOBS, "mobs x2 hits") 
+print("[Kitsune M1] ON | 360° AOE Only | 100 hits/s")
