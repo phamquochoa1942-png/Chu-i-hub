@@ -1,4 +1,4 @@
--- M1 Kitsune Fruit — 360° AOE ONLY (Không đánh thẳng)
+-- M1 Kitsune Fruit — 360° AOE MƯỢT (Fix Lag)
 _G.KitsuneM1 = true
 
 local Players = game:GetService("Players")
@@ -7,8 +7,8 @@ local vector_create = Vector3.new
 local math_rad = math.rad
 local math_random = math.random
 
-local RANGE = 1000
-local MAX_MOBS = 8
+local RANGE = 800
+local MAX_MOBS = 5
 
 local function FireKitsuneM1(direction)
     local char = LP.Character
@@ -27,51 +27,53 @@ local function FireKitsuneM1(direction)
 end
 
 local angle = 0
+local frame = 0
 
--- 100 hits/s — CHỈ ĐÁNH XUNG QUANH + AURA
 task.spawn(function()
     while _G.KitsuneM1 do
+        frame += 1
         local char = LP.Character
         if char then
             local root = char:FindFirstChild("HumanoidRootPart")
             if root then
                 local pivot = char:GetPivot()
                 
-                -- 12 hướng 360° (30° mỗi hướng)
-                for i = 0, 11 do
-                    local rad = math_rad(angle + i * 30)
-                    local dir = (pivot.LookVector * math.cos(rad) + pivot.RightVector * math.sin(rad)) * RANGE
-                    FireKitsuneM1(dir)
-                end
-                angle = (angle + 15) % 360
-                
-                -- Aura đánh từng con
-                local enemies = workspace:FindFirstChild("Enemies")
-                if enemies then
-                    local list = {}
-                    for _, v in ipairs(enemies:GetChildren()) do
-                        if v:IsA("Model") then
-                            local hum = v:FindFirstChildOfClass("Humanoid")
-                            local er = v:FindFirstChild("HumanoidRootPart")
-                            if hum and hum.Health > 0 and er then
-                                local dist = (root.Position - er.Position).Magnitude
-                                if dist <= RANGE then
-                                    list[#list + 1] = er
+                -- Aura: đánh quái xung quanh (ưu tiên)
+                if frame % 2 == 0 then -- Mỗi 2 frame quét 1 lần
+                    local enemies = workspace:FindFirstChild("Enemies")
+                    if enemies then
+                        local list = {}
+                        for _, v in ipairs(enemies:GetChildren()) do
+                            if v:IsA("Model") then
+                                local hum = v:FindFirstChildOfClass("Humanoid")
+                                local er = v:FindFirstChild("HumanoidRootPart")
+                                if hum and hum.Health > 0 and er then
+                                    local dist = (root.Position - er.Position).Magnitude
+                                    if dist <= RANGE then
+                                        list[#list + 1] = er
+                                    end
                                 end
                             end
                         end
-                    end
-                    table.sort(list, function(a, b) return (root.Position - a.Position).Magnitude < (root.Position - b.Position).Magnitude end)
-                    for i = 1, math.min(#list, MAX_MOBS) do
-                        local dir = (list[i].Position - root.Position).Unit * RANGE
-                        FireKitsuneM1(dir)
-                        FireKitsuneM1(dir)
+                        table.sort(list, function(a, b) return (root.Position - a.Position).Magnitude < (root.Position - b.Position).Magnitude end)
+                        for i = 1, math.min(#list, MAX_MOBS) do
+                            local dir = (list[i].Position - root.Position).Unit * RANGE
+                            FireKitsuneM1(dir)
+                        end
                     end
                 end
+                
+                -- 8 hướng 360° (mỗi frame)
+                for i = 0, 7 do
+                    local rad = math_rad(angle + i * 45)
+                    local dir = (pivot.LookVector * math.cos(rad) + pivot.RightVector * math.sin(rad)) * RANGE
+                    FireKitsuneM1(dir)
+                end
+                angle = (angle + 20) % 360
             end
         end
-        task.wait(0.01)
+        task.wait(0.02) -- 50 lần/giây (giảm tải)
     end
 end)
 
-print("[Kitsune M1] ON | 360° AOE Only | 100 hits/s")
+print("[Kitsune M1] ON | 360° AOE | Fix Lag")
