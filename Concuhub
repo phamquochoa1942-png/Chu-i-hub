@@ -1,8 +1,7 @@
--- M1 Kitsune Fruit — Fast Attack + Aura + Long Range
+-- M1 Kitsune Fruit — Fast Attack + Aura + Ultra Long Range
 _G.KitsuneM1 = true
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local LP = Players.LocalPlayer
 local vector_create = Vector3.new
 
@@ -44,8 +43,8 @@ local function AuraKitsune(range)
             local er = v:FindFirstChild("HumanoidRootPart")
             if hum and hum.Health > 0 and er then
                 local dist = (root.Position - er.Position).Magnitude
-                if dist <= (range or 200) then
-                    local dir = (er.Position - root.Position).Unit * 100
+                if dist <= (range or 500) then
+                    local dir = (er.Position - root.Position).Unit * 500
                     task.spawn(function()
                         FireKitsuneM1(dir)
                     end)
@@ -55,36 +54,18 @@ local function AuraKitsune(range)
     end
 end
 
--- =====================================================
--- MAIN LOOP — 0.01s delay
--- =====================================================
+-- MAIN LOOP — Đánh xa 500 studs
 task.spawn(function()
     while _G.KitsuneM1 do
         local char = LP.Character
         if char then
-            local lookDir = char:GetPivot().LookVector * 150
+            local lookDir = char:GetPivot().LookVector * 500
             FireKitsuneM1(lookDir)
-            AuraKitsune(300)
+            AuraKitsune(500)
         end
         
         task.wait(0.01)
     end
 end)
 
--- Animation cancel
-task.spawn(function()
-    while _G.KitsuneM1 do
-        task.wait(0.001)
-        local char = LP.Character
-        if char then
-            local hum = char:FindFirstChildOfClass("Humanoid")
-            if hum then
-                for _, t in ipairs(hum:GetPlayingAnimationTracks()) do
-                    t:Stop(0)
-                end
-            end
-        end
-    end
-end)
-
-print("[Kitsune M1] ON | 0.01s delay") 
+print("[Kitsune M1] ON | Range: 500 studs")
